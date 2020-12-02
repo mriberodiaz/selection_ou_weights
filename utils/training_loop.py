@@ -239,6 +239,9 @@ def run(iterative_process: tff.templates.IterativeProcess,
       train_metrics['num_participants'] = state.num_participants
     if hasattr(state, 'threshold'):
       train_metrics['threshold'] = state.threshold
+    if hasattr(state, 'global_norm_mean'):
+      logging.info(' THE GLOBAL NORM MEAN IS {state.global_norm_mean}')
+
 
     train_metrics.update(round_metrics)
 

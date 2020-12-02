@@ -28,6 +28,7 @@ import collections
 from typing import Callable, Optional, Union
 
 import attr
+from absl import logging
 import tensorflow as tf
 import tensorflow_federated as tff
 from tensorflow_federated.python.tensorflow_libs import tensor_utils
@@ -149,11 +150,11 @@ def server_update(model, server_optimizer, server_state, weights_delta,num_parti
     A = tf.nest.map_structure(calc_A, Sx, Sy, Sxy, Sxx)
     A, A_has_non_finite = (tensor_utils.zero_all_if_any_non_finite(A))
     # if A_has_non_finite>0:
-    #   tf.compat.v1.logging.info(f'A has non finite at round {n}')
+    logging.info(f'A has non finite at round {n}')
     B = tf.nest.map_structure(calc_B, Sx,Sy,A)
     B, B_has_non_finite = (tensor_utils.zero_all_if_any_non_finite(B))
     # if B_has_non_finite:
-    #   tf.compat.v1.logging.info(f'B has non finite at round {n}')
+    logging.info(f'B has non finite at round {n}')
 
     pred = tf.nest.map_structure(predict_next, model_weights.trainable, A,B)
     predicted_delta = tf.nest.map_structure(lambda x,y: x-y, pred,model_weights.trainable )
@@ -432,6 +433,8 @@ def build_fed_avg_process(
 
     new_global_norm_var = tff.federated_mean(var_at_clients,
           weight=client_weight)
+    logging.info(f'new var: {new_global_norm_var}')
+    logging.info(f'new mean: {new_global_norm_mean}')
     model_delta = tff.federated_mean(
         client_outputs.weights_delta, weight=client_weight)
 
