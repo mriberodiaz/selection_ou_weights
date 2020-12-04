@@ -229,6 +229,7 @@ def run(iterative_process: tff.templates.IterativeProcess,
       with profiler(round_num):
         use_client = np.random.binomial(n=1,p=prob_transmit, size = int(clients_per_round)).astype(np.bool).tolist()
         logging.info(f'   \n  NUM SELECTED BEFORE PASSING: {np.sum(use_client)/clients_per_round}    -   prob = {prob_transmit}')
+        logging.info(f'   \n                           len_use_client  : {len(use_client)}    -   fed_data = {len(federated_train_data)}')
         state, round_metrics = iterative_process.next(state,
                                                       federated_train_data, use_client)
     except (tf.errors.FailedPreconditionError, tf.errors.NotFoundError,
