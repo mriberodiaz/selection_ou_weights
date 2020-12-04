@@ -249,7 +249,8 @@ def create_client_update_fn():
       with tf.GradientTape() as tape:
         output = model.forward_pass(batch)
       grads = tape.gradient(output.loss, model_weights.trainable)
-      grads = tf.nest.map_structure(lambda g: clip_ops.clip_by_norm(g,5.0), grads)
+      #grads = tf.nest.map_structure(lambda g: clip_ops.clip_by_norm(g,5.0), grads)
+      grads, _ = tf.cip_by_global_norm(grads, 1.0)
       grads_and_vars = zip(grads, model_weights.trainable)
       client_optimizer.apply_gradients(grads_and_vars)
       num_examples += tf.shape(output.predictions)[0]
