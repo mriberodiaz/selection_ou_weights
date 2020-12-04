@@ -150,4 +150,5 @@ def run_federated(
       experiment_name=experiment_name,
       root_output_dir=root_output_dir,
       prob_transmit = prob_transmit,
+      clients_per_round = clients_per_round,
       **kwargs)
