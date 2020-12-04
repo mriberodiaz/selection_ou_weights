@@ -281,14 +281,12 @@ def main(argv):
   # shared_args['prob_transmit'] = FLAGS.prob_transmit
 
   if FLAGS.task == 'cifar100':
-    run_federated_fn = federated_cifar100.run_federated
     if FLAGS.random:
       run_federated_fn = federated_cifar100_random.run_federated
     else:
       run_federated_fn = federated_cifar100.run_federated
 
   elif FLAGS.task == 'emnist_cr':
-    #run_federated_fn = federated_emnist.run_federated
     if FLAGS.random:
       run_federated_fn = federated_emnist_random.run_federated
     else:
