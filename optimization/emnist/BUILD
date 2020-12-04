@@ -26,3 +26,15 @@ py_library(
         "//utils/models:emnist_models",
     ],
 )
+
+py_library(
+    name = "federated_emnist_random",
+    srcs = ["federated_emnist_random.py"],
+    srcs_version = "PY3",
+    deps = [
+        "//utils:training_loop_random",
+        "//utils:training_utils",
+        "//utils/datasets:emnist_dataset",
+        "//utils/models:emnist_models",
+    ],
+)
