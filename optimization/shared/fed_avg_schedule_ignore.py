@@ -204,7 +204,7 @@ def create_client_update_fn():
     weights_delta, has_non_finite_weight = (
         tensor_utils.zero_all_if_any_non_finite(weights_delta))
 
-    weights_delta, client_transmitted, client_delta_norm = estimation_utils.threshold_weights_global_norm(
+    weights_delta, client_transmitted, client_delta_norm = estimation_utils.threshold_weights_global_norm_without_dec(
       structure=weights_delta, 
       replace_structure=predicted_delta, 
       thresh=threshold, 
