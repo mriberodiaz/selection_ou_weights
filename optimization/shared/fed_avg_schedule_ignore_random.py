@@ -216,7 +216,7 @@ def create_client_update_fn():
       client_weight = client_weight_fn(aggregated_outputs)
 
     return ClientOutput(
-        weights_delta, client_weight, aggregated_outputs,
+        weights_delta, client_weight, real_client_weight, aggregated_outputs,
         collections.OrderedDict([('num_examples', num_examples)]), client_transmitted, client_delta_norm)
 
   return client_update
