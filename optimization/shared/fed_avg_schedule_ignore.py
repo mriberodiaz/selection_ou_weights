@@ -28,6 +28,7 @@ import collections
 from typing import Callable, Optional, Union
 
 import attr
+from absl import logging
 import tensorflow as tf
 import tensorflow_federated as tff
 from tensorflow_federated.python.tensorflow_libs import tensor_utils
@@ -100,6 +101,7 @@ def server_update(model, server_optimizer, server_state, weights_delta,num_parti
   weights_delta, has_non_finite_weight = (
       tensor_utils.zero_all_if_any_non_finite(weights_delta))
   if has_non_finite_weight > 0:
+    logging.info('    -----    Server received non zero weights ')
     return server_state
 
   # Apply the update to the model. We must multiply weights_delta by -1.0 to
