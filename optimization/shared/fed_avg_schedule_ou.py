@@ -200,6 +200,7 @@ class ClientOutput(object):
   """
   weights_delta = attr.ib()
   client_weight = attr.ib()
+  real_client_weight = attr.ib()
   model_output = attr.ib()
   optimizer_output = attr.ib()
   client_transmitted = attr.ib()
@@ -267,7 +268,7 @@ def create_client_update_fn():
       replace_structure=predicted_delta, 
       thresh=threshold, 
     )
-
+    real_client_weight = tf.cast(num_examples, dtype=tf.float32)
     if has_non_finite_weight > 0:
       client_weight = tf.constant(0, dtype=tf.float32)
     elif client_weight_fn is None:
@@ -276,7 +277,7 @@ def create_client_update_fn():
       client_weight = client_weight_fn(aggregated_outputs)
 
     return ClientOutput(
-        weights_delta, client_weight, aggregated_outputs,
+        weights_delta, client_weight, real_client_weight, aggregated_outputs,
         collections.OrderedDict([('num_examples', num_examples)]), client_transmitted, client_delta_norm)
 
   return client_update
@@ -428,14 +429,14 @@ def build_fed_avg_process(
     client_weight = client_outputs.client_weight
     num_participants = tff.federated_sum(client_outputs.client_transmitted)
     new_global_norm_mean = tff.federated_mean(client_outputs.client_delta_norm, 
-      weight=client_weight)
+      weight=client_outputs.real_client_weight)
 
     var_at_clients = tff.federated_map( local_variance_fn, 
           (client_outputs.client_delta_norm, 
             tff.federated_broadcast(new_global_norm_mean)) )
 
     new_global_norm_var = tff.federated_mean(var_at_clients,
-          weight=client_weight)
+          weight=client_outputs.real_client_weight)
     logging.info(f'new var: {new_global_norm_var}')
     logging.info(f'new mean: {new_global_norm_mean}')
     model_delta = tff.federated_mean(
