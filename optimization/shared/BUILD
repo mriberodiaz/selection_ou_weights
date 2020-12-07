@@ -45,6 +45,12 @@ py_library(
     srcs_version = "PY3",
     deps = [":estimation_utils"]
 )
+py_library(
+    name = "fed_avg_schedule_ou_compression",
+    srcs = ["fed_avg_schedule_ou_compression.py"],
+    srcs_version = "PY3",
+    deps = [":estimation_utils"]
+)
 py_test(
     name = "fed_avg_schedule_test",
     size = "large",
