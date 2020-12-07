@@ -39,6 +39,7 @@ from optimization.emnist_ae import federated_emnist_ae
 from optimization.shakespeare import federated_shakespeare
 from optimization.shakespeare import federated_shakespeare_random
 from optimization.shared import fed_avg_schedule_ou as fed_ou
+from optimization.shared import fed_avg_schedule_ou_compression as fed_ou_comp
 from optimization.shared import fed_avg_schedule as fed_avg
 from optimization.shared import fed_avg_schedule_zero as fed_zero
 from optimization.shared import fed_avg_schedule_ignore as fed_ignore
@@ -105,6 +106,7 @@ with utils_impl.record_hparam_flags() as estimation_flags:
                     'Which task to perform federated training on.')
   flags.DEFINE_boolean('random', False, 'wheater to use random or adaptive sampling' )
   flags.DEFINE_float('prob_transmit', 1.0, 'Probability of transmitting in case random sampling')
+  flags.DEFINE_boolean('compression', False, 'Use compression on client')
 
 with utils_impl.record_hparam_flags() as cifar100_flags:
   # CIFAR-100 flags
@@ -241,7 +243,10 @@ def main(argv):
       fed_avg_schedule = fed_ignore_random
   else:
     if FLAGS.estimation=='ou':
-      fed_avg_schedule = fed_ou
+      if FLAGS.compression:
+        fed_avg_schedule = fed_ou_comp
+      else:
+        fed_avg_schedule = fed_ou
     elif FLAGS.estimation=='zero':
       fed_avg_schedule = fed_zero
     elif FLAGS.estimation== 'ignore':
