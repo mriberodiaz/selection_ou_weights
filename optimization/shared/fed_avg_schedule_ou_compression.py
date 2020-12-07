@@ -34,6 +34,8 @@ import tensorflow_federated as tff
 from tensorflow_federated.python.tensorflow_libs import tensor_utils
 from optimization.shared import estimation_utils
 from tensorflow.python.ops import clip_ops
+from tensorflow_model_optimization.python.core.internal import tensor_encoding as te
+
 
 # Convenience type aliases.
 ModelBuilder = Callable[[], tff.learning.Model]
