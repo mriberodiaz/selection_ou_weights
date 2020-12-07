@@ -59,6 +59,7 @@ py_binary(
         "//optimization/shakespeare:federated_shakespeare_random",
         "//optimization/shared:fed_avg_schedule",
 	"//optimization/shared:fed_avg_schedule_ou",
+	"//optimization/shared:fed_avg_schedule_ou_compression",
 	"//optimization/shared:fed_avg_schedule_zero",
 	"//optimization/shared:fed_avg_schedule_zero_random",
 	"//optimization/shared:fed_avg_schedule_ignore_random",
