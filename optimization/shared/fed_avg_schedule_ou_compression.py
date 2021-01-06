@@ -35,6 +35,7 @@ from tensorflow_federated.python.tensorflow_libs import tensor_utils
 from optimization.shared import estimation_utils
 from tensorflow.python.ops import clip_ops
 from tensorflow_model_optimization.python.core.internal import tensor_encoding as te
+from tensorflow_federated.python.core.templates import measured_process
 
 
 # Convenience type aliases.
@@ -43,24 +44,6 @@ OptimizerBuilder = Callable[[float], tf.keras.optimizers.Optimizer]
 ClientWeightFn = Callable[..., float]
 LRScheduleFn = Callable[[Union[int, tf.Tensor]], Union[tf.Tensor, float]]
 
-def broadcast_encoder_fn(value):
-  """Function for building encoded broadcast."""
-  spec = tf.TensorSpec(value.shape, value.dtype)
-  if value.shape.num_elements() > 10000:
-    return te.encoders.as_simple_encoder(
-        te.encoders.uniform_quantization(bits=8), spec)
-  else:
-    return te.encoders.as_simple_encoder(te.encoders.identity(), spec)
-
-
-def mean_encoder_fn(value):
-  """Function for building encoded mean."""
-  spec = tf.TensorSpec(value.shape, value.dtype)
-  if value.shape.num_elements() > 10000:
-    return te.encoders.as_gather_encoder(
-        te.encoders.uniform_quantization(bits=8), spec)
-  else:
-    return te.encoders.as_gather_encoder(te.encoders.identity(), spec)
 
 def _initialize_optimizer_vars(model: tff.learning.Model,
                                optimizer: tf.keras.optimizers.Optimizer):
@@ -296,10 +279,10 @@ def create_client_update_fn():
     else:
       client_weight = client_weight_fn(aggregated_outputs)
 
-    weights_delta_encoded = tf.nest.map_structure(mean_encoder_fn, weights_delta)
+    #weights_delta_encoded = tf.nest.map_structure(mean_encoder_fn, weights_delta)
 
     return ClientOutput(
-        weights_delta_encoded, client_weight, real_client_weight, aggregated_outputs,
+        weights_delta, client_weight, real_client_weight, aggregated_outputs,
         collections.OrderedDict([('num_examples', num_examples)]), client_transmitted, client_delta_norm)
 
   return client_update
@@ -342,6 +325,7 @@ def build_server_init_fn(
         global_norm_mean = tf.constant(0.0, dtype=tf.float32),
         global_norm_std = tf.constant(0.0, dtype=tf.float32),
         threshold = tf.constant(0.0, dtype=tf.float32),
+        delta_aggregate_state=aggregation_process.initialize()
         )
 
   return server_init_tf
@@ -354,6 +338,7 @@ def build_fed_avg_process(
     server_optimizer_fn: OptimizerBuilder = tf.keras.optimizers.SGD,
     server_lr: Union[float, LRScheduleFn] = 1.0,
     client_weight_fn: Optional[ClientWeightFn] = None,
+    aggregation_process: Optional[measured_process.MeasuredProcess] = None,
 ) -> tff.templates.IterativeProcess:
   """Builds the TFF computations for optimization using federated averaging.
 
@@ -461,12 +446,17 @@ def build_fed_avg_process(
           weight=client_outputs.real_client_weight)
     logging.info(f'new var: {new_global_norm_var}')
     logging.info(f'new mean: {new_global_norm_mean}')
-    model_delta = tff.federated_mean(
-        client_outputs.weights_delta, weight=client_weight)
+
+    aggregation_output = aggregation_process.next(
+        server_state.delta_aggregate_state, client_outputs.weights_delta,
+        client_weight)
+
+    # model_delta = tff.federated_mean(
+    #     client_outputs.weights_delta, weight=client_weight)
 
     server_state = tff.federated_map(server_update_fn,
                                      (server_state, 
-                                      model_delta,
+                                      aggregation_output.result,
                                       num_participants,
                                       new_global_norm_mean,
                                       new_global_norm_var))
