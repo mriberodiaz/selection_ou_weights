@@ -253,31 +253,70 @@ def main(argv):
       fed_avg_schedule = fed_ignore
     else:
       fed_avg_schedule = fed_avg
+  if FLAGS.compression:
+    def iterative_process_builder(
+        model_fn: Callable[[], tff.learning.Model],
+        client_weight_fn: Optional[Callable[[Any], tf.Tensor]] = None,
+    ) -> tff.templates.IterativeProcess:
+      """Creates an iterative process using a given TFF `model_fn`.
 
-  def iterative_process_builder(
-      model_fn: Callable[[], tff.learning.Model],
-      client_weight_fn: Optional[Callable[[Any], tf.Tensor]] = None,
-  ) -> tff.templates.IterativeProcess:
-    """Creates an iterative process using a given TFF `model_fn`.
+      Args:
+        model_fn: A no-arg function returning a `tff.learning.Model`.
+        client_weight_fn: Optional function that takes the output of
+          `model.report_local_outputs` and returns a tensor providing the weight
+          in the federated average of model deltas. If not provided, the default
+          is the total number of examples processed on device.
 
-    Args:
-      model_fn: A no-arg function returning a `tff.learning.Model`.
-      client_weight_fn: Optional function that takes the output of
-        `model.report_local_outputs` and returns a tensor providing the weight
-        in the federated average of model deltas. If not provided, the default
-        is the total number of examples processed on device.
+      Returns:
+        A `tff.templates.IterativeProcess`.
+      """
 
-    Returns:
-      A `tff.templates.IterativeProcess`.
-    """
+      return fed_avg_schedule.build_fed_avg_process(
+          model_fn=model_fn,
+          client_optimizer_fn=client_optimizer_fn,
+          client_lr=client_lr_schedule,
+          server_optimizer_fn=server_optimizer_fn,
+          server_lr=server_lr_schedule,
+          client_weight_fn=client_weight_fn)
+  else:
+    def mean_encoder_fn(value):
+      """Function for building encoded mean."""
+      spec = tf.TensorSpec(value.shape, value.dtype)
+      if value.shape.num_elements() > 10000:
+        return te.encoders.as_gather_encoder(
+            te.encoders.uniform_quantization(bits=8), spec)
+      else:
+        return te.encoders.as_gather_encoder(te.encoders.identity(), spec)
+    encoded_mean_process = (
+      tff.learning.framework.build_encoded_mean_process_from_model(
+        tff_model_fn, mean_encoder_fn))
+    def iterative_process_builder(
+        model_fn: Callable[[], tff.learning.Model],
+        client_weight_fn: Optional[Callable[[Any], tf.Tensor]] = None
+    ) -> tff.templates.IterativeProcess:
+      """Creates an iterative process using a given TFF `model_fn`.
 
-    return fed_avg_schedule.build_fed_avg_process(
-        model_fn=model_fn,
-        client_optimizer_fn=client_optimizer_fn,
-        client_lr=client_lr_schedule,
-        server_optimizer_fn=server_optimizer_fn,
-        server_lr=server_lr_schedule,
-        client_weight_fn=client_weight_fn)
+      Args:
+        model_fn: A no-arg function returning a `tff.learning.Model`.
+        client_weight_fn: Optional function that takes the output of
+          `model.report_local_outputs` and returns a tensor providing the weight
+          in the federated average of model deltas. If not provided, the default
+          is the total number of examples processed on device.
+
+      Returns:
+        A `tff.templates.IterativeProcess`.
+      """
+
+      return fed_avg_schedule.build_fed_avg_process(
+          model_fn=model_fn,
+          client_optimizer_fn=client_optimizer_fn,
+          client_lr=client_lr_schedule,
+          server_optimizer_fn=server_optimizer_fn,
+          server_lr=server_lr_schedule,
+          client_weight_fn=client_weight_fn, 
+          aggregation_process = encoded_mean_process)
+
+
 
   shared_args = utils_impl.lookup_flag_values(shared_flags)
   shared_args['iterative_process_builder'] = iterative_process_builder
