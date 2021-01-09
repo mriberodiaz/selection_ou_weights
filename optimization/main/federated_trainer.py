@@ -27,6 +27,7 @@ from absl import app
 from absl import flags
 import tensorflow as tf
 import tensorflow_federated as tff
+from tensorflow_model_optimization.python.core.internal import tensor_encoding as te
 
 
 from optimization.synthetic import federated_synthetic
