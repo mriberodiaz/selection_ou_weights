@@ -279,17 +279,6 @@ def main(argv):
           server_lr=server_lr_schedule,
           client_weight_fn=client_weight_fn)
   else:
-    def mean_encoder_fn(value):
-      """Function for building encoded mean."""
-      spec = tf.TensorSpec(value.shape, value.dtype)
-      if value.shape.num_elements() > 10000:
-        return te.encoders.as_gather_encoder(
-            te.encoders.uniform_quantization(bits=8), spec)
-      else:
-        return te.encoders.as_gather_encoder(te.encoders.identity(), spec)
-    encoded_mean_process = (
-      tff.learning.framework.build_encoded_mean_process_from_model(
-        tff_model_fn, mean_encoder_fn))
     def iterative_process_builder(
         model_fn: Callable[[], tff.learning.Model],
         client_weight_fn: Optional[Callable[[Any], tf.Tensor]] = None
@@ -306,6 +295,17 @@ def main(argv):
       Returns:
         A `tff.templates.IterativeProcess`.
       """
+      def mean_encoder_fn(value):
+        """Function for building encoded mean."""
+        spec = tf.TensorSpec(value.shape, value.dtype)
+        if value.shape.num_elements() > 10000:
+          return te.encoders.as_gather_encoder(
+              te.encoders.uniform_quantization(bits=8), spec)
+        else:
+          return te.encoders.as_gather_encoder(te.encoders.identity(), spec)
+      encoded_mean_process = (
+        tff.learning.framework.build_encoded_mean_process_from_model(
+          model_fn, mean_encoder_fn))
 
       return fed_avg_schedule.build_fed_avg_process(
           model_fn=model_fn,
