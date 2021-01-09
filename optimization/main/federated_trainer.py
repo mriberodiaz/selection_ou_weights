@@ -253,7 +253,7 @@ def main(argv):
       fed_avg_schedule = fed_ignore
     else:
       fed_avg_schedule = fed_avg
-  if FLAGS.compression:
+  if not FLAGS.compression:
     def iterative_process_builder(
         model_fn: Callable[[], tff.learning.Model],
         client_weight_fn: Optional[Callable[[Any], tf.Tensor]] = None,
