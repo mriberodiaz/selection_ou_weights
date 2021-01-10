@@ -290,7 +290,8 @@ def create_client_update_fn():
 
 def build_server_init_fn(
     model_fn: ModelBuilder,
-    server_optimizer_fn: Callable[[], tf.keras.optimizers.Optimizer]):
+    server_optimizer_fn: Callable[[], tf.keras.optimizers.Optimizer],
+    aggregation_process: Optional[measured_process.MeasuredProcess] = None):
   """Builds a `tff.tf_computation` that returns the initial `ServerState`.
 
   The attributes `ServerState.model` and `ServerState.optimizer_state` are
@@ -374,7 +375,8 @@ def build_fed_avg_process(
   server_init_tf = build_server_init_fn(
       model_fn,
       # Initialize with the learning rate for round zero.
-      lambda: server_optimizer_fn(server_lr_schedule(0)))
+      lambda: server_optimizer_fn(server_lr_schedule(0)), 
+      aggregation_process = aggregation_process)
   server_state_type = server_init_tf.type_signature.result
   model_weights_type = server_state_type.model
   predicted_delta_type = server_state_type.predicted_delta
