@@ -38,3 +38,14 @@ py_library(
         "//utils/models:emnist_models",
     ],
 )
+py_library(
+    name = "federated_emnist_compression",
+    srcs = ["federated_emnist_compression.py"],
+    srcs_version = "PY3",
+    deps = [
+        "//utils:training_loop",
+        "//utils:training_utils",
+        "//utils/datasets:emnist_dataset",
+        "//utils/models:emnist_models",
+    ],
+)
