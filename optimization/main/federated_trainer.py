@@ -317,7 +317,7 @@ def main(argv):
           server_optimizer_fn=server_optimizer_fn,
           server_lr=server_lr_schedule,
           client_weight_fn=client_weight_fn, 
-          aggregation_process = aggregation_process)
+          aggregation_process = encoded_mean_process)
 
 
 
