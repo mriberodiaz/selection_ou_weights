@@ -124,7 +124,7 @@ def run_federated(
         loss=loss_builder(),
         metrics=metrics_builder())
 
-  training_process = iterative_process_builder(tff_model_fn)
+  training_process = iterative_process_builder(model_fn = tff_model_fn)
 
   client_datasets_fn = training_utils.build_client_datasets_fn(
       train_dataset=emnist_train,
