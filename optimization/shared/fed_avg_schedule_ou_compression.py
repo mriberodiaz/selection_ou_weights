@@ -85,6 +85,7 @@ class ServerState(object):
   global_norm_mean = attr.ib()
   global_norm_std = attr.ib()
   threshold = attr.ib()
+  delta_aggregate_state = attr.ib()
   # This is a float to avoid type incompatibility when calculating learning rate
   # schedules.
 
