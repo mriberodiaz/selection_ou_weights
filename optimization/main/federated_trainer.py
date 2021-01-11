@@ -282,12 +282,22 @@ def main(argv):
           server_lr=server_lr_schedule,
           client_weight_fn=client_weight_fn)
   else:
-    print('entered compression')
+    def mean_encoder_fn(value):
+      """Function for building encoded mean."""
+      spec = tf.TensorSpec(value.shape, value.dtype)
+      if value.shape.num_elements() > 10000:
+        return te.encoders.as_gather_encoder(
+            te.encoders.uniform_quantization(bits=8), spec)
+      else:
+        return te.encoders.as_gather_encoder(te.encoders.identity(), spec)
+
+    encoded_mean_process = (
+    tff.learning.framework.build_encoded_mean_process_from_model(
+      model_fn, mean_encoder_fn))
     def iterative_process_builder(
         model_fn: Callable[[], tff.learning.Model],
         client_weight_fn: Optional[Callable[[Any], tf.Tensor]] = None,
-        aggregation_process: Optional[measured_process.MeasuredProcess] = None,
-    ) -> tff.templates.IterativeProcess:
+        ) -> tff.templates.IterativeProcess:
       """Creates an iterative process using a given TFF `model_fn`.
 
       Args:
@@ -326,8 +336,8 @@ def main(argv):
   elif FLAGS.task == 'emnist_cr':
     if FLAGS.random:
       run_federated_fn = federated_emnist_random.run_federated
-    elif FLAGS.compression:
-      run_federated_fn = federated_emnist_compression.run_federated
+    # elif FLAGS.compression:
+    #   run_federated_fn = federated_emnist_compression.run_federated
     else:
       run_federated_fn = federated_emnist.run_federated
   elif FLAGS.task == 'emnist_ae':
