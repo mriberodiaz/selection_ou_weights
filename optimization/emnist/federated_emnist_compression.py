@@ -19,6 +19,7 @@ from typing import Callable, Optional
 from absl import logging
 import tensorflow as tf
 import tensorflow_federated as tff
+from tensorflow_model_optimization.python.core.internal import tensor_encoding as te
 
 from utils import training_loop
 from utils import training_utils
