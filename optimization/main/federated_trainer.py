@@ -36,6 +36,7 @@ from optimization.cifar100 import federated_cifar100
 from optimization.cifar100 import federated_cifar100_random
 from optimization.emnist import federated_emnist
 from optimization.emnist import federated_emnist_random
+from optimization.emnist import federated_emnist_compression
 from optimization.emnist_ae import federated_emnist_ae
 from optimization.shakespeare import federated_shakespeare
 from optimization.shakespeare import federated_shakespeare_random
@@ -325,7 +326,7 @@ def main(argv):
     if FLAGS.random:
       run_federated_fn = federated_emnist_random.run_federated
     elif FLAGS.compression:
-      run_federated_fn = federated_emnist_comp.run_federated
+      run_federated_fn = federated_emnist_compression.run_federated
     else:
       run_federated_fn = federated_emnist.run_federated
   elif FLAGS.task == 'emnist_ae':
