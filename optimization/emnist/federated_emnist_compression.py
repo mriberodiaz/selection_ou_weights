@@ -108,7 +108,7 @@ def run_federated(
       train_batch_size=client_batch_size,
       max_test_batches=max_eval_batches,
       only_digits=False)
-
+  logging.info(' Finished loading data')
   input_spec = emnist_train.create_tf_dataset_for_client(
       emnist_train.client_ids[0]).element_spec
 
@@ -132,6 +132,7 @@ def run_federated(
         input_spec=input_spec,
         loss=loss_builder(),
         metrics=metrics_builder())
+
   encoded_mean_process = (
     tff.learning.framework.build_encoded_mean_process_from_model(
       tff_model_fn, mean_encoder_fn))
@@ -139,6 +140,7 @@ def run_federated(
   training_process = iterative_process_builder(model_fn = tff_model_fn,
     aggregation_process = encoded_mean_process)
 
+  logging.info(' DEFINED TRAINING PROCESS')
   client_datasets_fn = training_utils.build_client_datasets_fn(
       train_dataset=emnist_train,
       train_clients_per_round=clients_per_round,
