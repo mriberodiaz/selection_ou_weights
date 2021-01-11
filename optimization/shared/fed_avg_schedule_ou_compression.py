@@ -30,7 +30,8 @@ from typing import Callable, Optional, Union
 import attr
 from absl import logging
 import tensorflow as tf
-import tensorflow_federated as tff
+import tensorflow_federated as 
+from tensorflow_federated.python.core.api import intrinsics
 from tensorflow_federated.python.tensorflow_libs import tensor_utils
 from optimization.shared import estimation_utils
 from tensorflow.python.ops import clip_ops
@@ -313,7 +314,7 @@ def build_server_init_fn(
     server_optimizer = server_optimizer_fn()
     model = model_fn()
     _initialize_optimizer_vars(model, server_optimizer)
-    return ServerState(
+    return intrinsics.federated_zip(ServerState(
         model=_get_weights(model),
         optimizer_state=server_optimizer.variables(),
         round_num=0.0,
@@ -328,7 +329,7 @@ def build_server_init_fn(
         global_norm_std = tf.constant(0.0, dtype=tf.float32),
         threshold = tf.constant(0.0, dtype=tf.float32),
         delta_aggregate_state=aggregation_process.initialize()
-        )
+        ))
 
   return server_init_tf
 
