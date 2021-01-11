@@ -280,6 +280,7 @@ def main(argv):
           server_lr=server_lr_schedule,
           client_weight_fn=client_weight_fn)
   else:
+    print('entered compression')
     def iterative_process_builder(
         model_fn: Callable[[], tff.learning.Model],
         client_weight_fn: Optional[Callable[[Any], tf.Tensor]] = None
