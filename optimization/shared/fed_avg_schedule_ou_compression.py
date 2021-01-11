@@ -373,9 +373,9 @@ def build_fed_avg_process(
   dummy_model = model_fn()
 
   server_init_tf = build_server_init_fn(
-      model_fn,
+      model_fn = model_fn,
       # Initialize with the learning rate for round zero.
-      lambda: server_optimizer_fn(server_lr_schedule(0)), 
+      server_optimizer_fn = lambda: server_optimizer_fn(server_lr_schedule(0)), 
       aggregation_process = aggregation_process)
   server_state_type = server_init_tf.type_signature.result
   model_weights_type = server_state_type.model
