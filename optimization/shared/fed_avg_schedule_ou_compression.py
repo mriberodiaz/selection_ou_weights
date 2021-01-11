@@ -30,7 +30,7 @@ from typing import Callable, Optional, Union
 import attr
 from absl import logging
 import tensorflow as tf
-import tensorflow_federated as 
+import tensorflow_federated as tff
 from tensorflow_federated.python.core.api import intrinsics
 from tensorflow_federated.python.tensorflow_libs import tensor_utils
 from optimization.shared import estimation_utils
