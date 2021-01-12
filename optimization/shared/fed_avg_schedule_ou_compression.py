@@ -381,7 +381,12 @@ def build_fed_avg_process(
     optimizer_variable_type = type_conversions.type_from_tensors(
         dummy_optimizer.variables())    
 
-
+  
+  server_init_tf = build_server_init_fn(
+        model_fn = model_fn,
+        # Initialize with the learning rate for round zero.
+        server_optimizer_fn = lambda: server_optimizer_fn(server_lr_schedule(0)), 
+        aggregation_process = aggregation_process)
 
   server_state_type = server_init_tf.type_signature.result
   model_weights_type = server_state_type.model
@@ -415,12 +420,7 @@ def build_fed_avg_process(
         )
 
 
-  server_init_tf = build_server_init_fn(
-        model_fn = model_fn,
-        # Initialize with the learning rate for round zero.
-        server_optimizer_fn = lambda: server_optimizer_fn(server_lr_schedule(0)), 
-        aggregation_process = aggregation_process)
-  
+
   @tff.tf_computation(model_input_type, model_weights_type, round_num_type, predicted_delta_type, threshold_type)
   def client_update_fn(tf_dataset, initial_model_weights, round_num, predicted_delta, threshold):
     client_lr = client_lr_schedule(round_num)
