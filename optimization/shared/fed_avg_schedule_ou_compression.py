@@ -37,6 +37,7 @@ from optimization.shared import estimation_utils
 from tensorflow.python.ops import clip_ops
 from tensorflow_model_optimization.python.core.internal import tensor_encoding as te
 from tensorflow_federated.python.core.templates import measured_process
+from tensorflow_federated.python.core.impl.types import type_conversions
 
 
 # Convenience type aliases.
@@ -61,7 +62,7 @@ def _get_weights(model: tff.learning.Model) -> tff.learning.ModelWeights:
   return tff.learning.ModelWeights.from_model(model)
 
 
-@attr.s(eq=False, order=False, frozen=True)
+@attr.s(eq=False, frozen=True)
 class ServerState(object):
   """Structure for state on the server.
 
@@ -373,13 +374,15 @@ def build_fed_avg_process(
   if not callable(server_lr_schedule):
     server_lr_schedule = lambda round_num: server_lr
 
-  dummy_model = model_fn()
+  with tf.Graph().as_default():
+    dummy_model = model_fn()
+    dummy_optimizer = server_optimizer_fn()
+    _initialize_optimizer_vars(dummy_model, dummy_optimizer)
+    optimizer_variable_type = type_conversions.type_from_tensors(
+        dummy_optimizer.variables())    
 
-  server_init_tf = build_server_init_fn(
-      model_fn = model_fn,
-      # Initialize with the learning rate for round zero.
-      server_optimizer_fn = lambda: server_optimizer_fn(server_lr_schedule(0)), 
-      aggregation_process = aggregation_process)
+
+
   server_state_type = server_init_tf.type_signature.result
   model_weights_type = server_state_type.model
   predicted_delta_type = server_state_type.predicted_delta
@@ -392,6 +395,32 @@ def build_fed_avg_process(
   tf_dataset_type = tff.SequenceType(dummy_model.input_spec)
   model_input_type = tff.SequenceType(dummy_model.input_spec)
 
+  aggregation_state = aggregation_process.initialize.type_signature.result.member
+
+  server_state_type = ServerState(
+        model=model_weights_type,
+        optimizer_state=optimizer_variable_type,
+        round_num=round_num_type,
+        predicted_delta = predicted_delta_type,
+        Sy = predicted_delta_type, 
+        Syy = predicted_delta_type,
+        Sx = predicted_delta_type,
+        Sxx = predicted_delta_type,
+        Sxy = predicted_delta_type,
+        num_participants= num_participants_type,
+        global_norm_mean = norm_mean_type,
+        global_norm_std = norm_std_type,
+        threshold = threshold_type,
+        delta_aggregate_state=aggregation_state,
+        )
+
+
+  server_init_tf = build_server_init_fn(
+        model_fn = model_fn,
+        # Initialize with the learning rate for round zero.
+        server_optimizer_fn = lambda: server_optimizer_fn(server_lr_schedule(0)), 
+        aggregation_process = aggregation_process)
+  
   @tff.tf_computation(model_input_type, model_weights_type, round_num_type, predicted_delta_type, threshold_type)
   def client_update_fn(tf_dataset, initial_model_weights, round_num, predicted_delta, threshold):
     client_lr = client_lr_schedule(round_num)
