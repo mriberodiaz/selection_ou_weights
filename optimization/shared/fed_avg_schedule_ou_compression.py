@@ -291,9 +291,10 @@ def create_client_update_fn():
 
 
 def build_server_init_fn(
-    model_fn: ModelBuilder,
-    server_optimizer_fn: Callable[[], tf.keras.optimizers.Optimizer],
-    aggregation_process: Optional[measured_process.MeasuredProcess]):
+  *,
+  model_fn: ModelBuilder,
+  server_optimizer_fn: Callable[[], tf.keras.optimizers.Optimizer],
+  aggregation_process: Optional[measured_process.MeasuredProcess]):
   """Builds a `tff.tf_computation` that returns the initial `ServerState`.
 
   The attributes `ServerState.model` and `ServerState.optimizer_state` are
@@ -328,7 +329,7 @@ def build_server_init_fn(
         global_norm_mean = tf.constant(0.0, dtype=tf.float32),
         global_norm_std = tf.constant(0.0, dtype=tf.float32),
         threshold = tf.constant(0.0, dtype=tf.float32),
-        delta_aggregate_state=aggregation_process.initialize()
+        delta_aggregate_state=aggregation_process.initialize(),
         ))
 
   return server_init_tf
