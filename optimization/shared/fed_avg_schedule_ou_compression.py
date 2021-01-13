@@ -418,7 +418,7 @@ def build_fed_avg_process(
 
   # server_state_type = initialize_computation.type_signature.result
   # model_weights_type = server_state_type.model
-  predicted_delta_type = model_weights_type
+  predicted_delta_type = type_conversions.type_from_tensors(_get_weights(dummy_model).trainable) 
   round_num_type = tf.int32
   threshold_type = tf.float32
   num_participants_type = tf.int32
