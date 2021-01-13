@@ -42,6 +42,7 @@ from tensorflow_federated.python.core.api import computations
 from tensorflow_federated.python.core.api import computation_base
 from tensorflow_federated.python.core.api import computation_types
 from tensorflow_federated.python.core.api import placements
+from tensorflow_federated.python.learning import model_utils
 
 
 # Convenience type aliases.
@@ -401,6 +402,8 @@ def build_fed_avg_process(
 
   with tf.Graph().as_default():
     dummy_model = model_fn()
+    model_weights_type = model_utils.weights_type_from_model(
+        dummy_model)
     dummy_optimizer = server_optimizer_fn()
     _initialize_optimizer_vars(dummy_model, dummy_optimizer)
     optimizer_variable_type = type_conversions.type_from_tensors(
@@ -413,14 +416,14 @@ def build_fed_avg_process(
         server_optimizer_fn = lambda: server_optimizer_fn(server_lr_schedule(0)), 
         aggregation_process = aggregation_process)
 
-  server_state_type = initialize_computation.type_signature.result
-  model_weights_type = server_state_type.model
-  predicted_delta_type = server_state_type.predicted_delta
-  round_num_type = server_state_type.round_num
-  threshold_type = server_state_type.global_norm_mean
-  num_participants_type = server_state_type.num_participants
-  norm_mean_type = server_state_type.global_norm_mean
-  norm_std_type = server_state_type.global_norm_std
+  # server_state_type = initialize_computation.type_signature.result
+  # model_weights_type = server_state_type.model
+  predicted_delta_type = model_weights_type
+  round_num_type = tf.int32
+  threshold_type = tf.float32
+  num_participants_type = tf.int32
+  norm_mean_type = tf.float32
+  norm_std_type = tf.float32
 
   tf_dataset_type = tff.SequenceType(dummy_model.input_spec)
   model_input_type = tff.SequenceType(dummy_model.input_spec)
