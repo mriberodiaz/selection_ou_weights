@@ -331,7 +331,7 @@ def build_server_init_fn(
         model=initial_global_model,
         optimizer_state=initial_global_optimizer_state,
         round_num=tff.federated_value(0.0, tff.SERVER),
-        predicted_delta = tff.federated_value(tf.nest.map_structure(tf.zeros_like, ini), tff.SERVER),
+        predicted_delta = tff.federated_value(tf.nest.map_structure(tf.zeros_like, model.weights.trainable), tff.SERVER),
         Sy = tff.federated_value(tf.nest.map_structure(tf.zeros_like, model.weights.trainable), tff.SERVER), 
         Syy = tff.federated_value(tf.nest.map_structure(tf.zeros_like, model.weights.trainable), tff.SERVER),
         Sx = tff.federated_value(tf.nest.map_structure(tf.zeros_like, model.weights.trainable), tff.SERVER),
