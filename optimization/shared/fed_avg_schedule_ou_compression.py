@@ -319,24 +319,30 @@ def build_server_init_fn(
     server_optimizer = server_optimizer_fn()
     model = model_fn()
     _initialize_optimizer_vars(model, server_optimizer)
-    return ServerState(
-        model=_get_weights(model),
-        optimizer_state=server_optimizer.variables(),
-        round_num=0.0,
-        predicted_delta = tf.nest.map_structure(tf.zeros_like, model.weights.trainable),
-        Sy = tf.nest.map_structure(tf.zeros_like, model.weights.trainable), 
-        Syy = tf.nest.map_structure(tf.zeros_like, model.weights.trainable),
-        Sx = tf.nest.map_structure(tf.zeros_like, model.weights.trainable),
-        Sxx = tf.nest.map_structure(tf.zeros_like, model.weights.trainable),
-        Sxy = tf.nest.map_structure(tf.zeros_like, model.weights.trainable),
-        num_participants= tf.constant(0, dtype=tf.int32),
-        global_norm_mean = tf.constant(0.0, dtype=tf.float32),
-        global_norm_std = tf.constant(0.0, dtype=tf.float32),
-        threshold = tf.constant(0.0, dtype=tf.float32),
-        delta_aggregate_state=aggregation_process.initialize(),
-        )
+    return _get_weights(model), server_optimizer.variables(),
 
-  return server_init_tf
+  @computations.federated_computation()
+  def initialize_computation():
+    initial_global_model, initial_global_optimizer_state = intrinsics.federated_eval(
+        server_init, placements.SERVER)
+    return intrinsics.federated_zip(ServerState(
+        model=initial_global_model,
+        optimizer_state=initial_global_optimizer_state,
+        round_num=tff.federated_value(0.0, tff.SERVER),
+        predicted_delta = tff.federated_value(tf.nest.map_structure(tf.zeros_like, model.weights.trainable), tff.SERVER),
+        Sy = tff.federated_value(tf.nest.map_structure(tf.zeros_like, model.weights.trainable), tff.SERVER), 
+        Syy = tff.federated_value(tf.nest.map_structure(tf.zeros_like, model.weights.trainable), tff.SERVER),
+        Sx = tff.federated_value(tf.nest.map_structure(tf.zeros_like, model.weights.trainable), tff.SERVER),
+        Sxx = tff.federated_value(tf.nest.map_structure(tf.zeros_like, model.weights.trainable), tff.SERVER),
+        Sxy = tff.federated_value(tf.nest.map_structure(tf.zeros_like, model.weights.trainable), tff.SERVER),
+        num_participants= tff.federated_value(tf.constant(0, dtype=tf.int32), tff.SERVER),
+        global_norm_mean = tff.federated_value(tf.constant(0.0, dtype=tf.float32), tff.SERVER),
+        global_norm_std = tff.federated_value(tf.constant(0.0, dtype=tf.float32), tff.SERVER),
+        threshold = tff.federated_value(tf.constant(0.0, dtype=tf.float32), tff.SERVER),
+        delta_aggregate_state=aggregation_process.initialize(),
+        ))
+
+  return initialize_computation
 
 
 def build_fed_avg_process(
@@ -385,10 +391,10 @@ def build_fed_avg_process(
         dummy_optimizer.variables())    
 
   
-  server_init_tf = build_server_init_fn(
+  initialize_computation = build_server_init_fn(
         model_fn = model_fn,
         # Initialize with the learning rate for round zero.
-        server_optimizer_fn = server_optimizer_fn, 
+        server_optimizer_fn = lambda: server_optimizer_fn(server_lr_schedule(0)), 
         aggregation_process = aggregation_process)
 
   server_state_type = server_init_tf.type_signature.result
@@ -505,9 +511,9 @@ def build_fed_avg_process(
 
     return server_state, aggregated_outputs
 
-  @tff.federated_computation
-  def initialize_fn():
-    return tff.federated_value(server_init_tf(), tff.SERVER)
+  # @tff.federated_computation
+  # def initialize_fn():
+  #   return tff.federated_value(server_init_tf(), tff.SERVER)
 
   return tff.templates.IterativeProcess(
-      initialize_fn=initialize_fn, next_fn=run_one_round)
+      initialize_fn=initialize_computation, next_fn=run_one_round)
