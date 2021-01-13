@@ -41,6 +41,7 @@ from tensorflow_federated.python.core.impl.types import type_conversions
 from tensorflow_federated.python.core.api import computations
 from tensorflow_federated.python.core.api import computation_base
 from tensorflow_federated.python.core.api import computation_types
+from tensorflow_federated.python.core.api import placements
 
 
 # Convenience type aliases.
