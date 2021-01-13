@@ -314,12 +314,12 @@ def build_server_init_fn(
     A `tff.tf_computation` that returns initial `ServerState`.
   """
 
-  @computations.federated_computation()
+  @computations.tf_computation()
   def server_init_tf():
     server_optimizer = server_optimizer_fn()
     model = model_fn()
     _initialize_optimizer_vars(model, server_optimizer)
-    return intrinsics.federated_zip(ServerState(
+    return ServerState(
         model=_get_weights(model),
         optimizer_state=server_optimizer.variables(),
         round_num=0.0,
@@ -334,7 +334,7 @@ def build_server_init_fn(
         global_norm_std = tf.constant(0.0, dtype=tf.float32),
         threshold = tf.constant(0.0, dtype=tf.float32),
         delta_aggregate_state=aggregation_process.initialize(),
-        ))
+        )
 
   return server_init_tf
 
