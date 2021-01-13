@@ -28,6 +28,32 @@ from utils import checkpoint_manager
 from utils import metrics_manager
 from utils import utils_impl
 
+def format_size(size):
+  """A helper function for creating a human-readable size."""
+  size = float(size)
+  for unit in ['bit','Kibit','Mibit','Gibit']:
+    if size < 1024.0:
+      return "{size:3.2f}{unit}".format(size=size, unit=unit)
+    size /= 1024.0
+  return "{size:.2f}{unit}".format(size=size, unit='TiB')
+
+def set_sizing_environment():
+  """Creates an environment that contains sizing information."""
+  # Creates a sizing executor factory to output communication cost
+  # after the training finishes. Note that sizing executor only provides an
+  # estimate (not exact) of communication cost, and doesn't capture cases like
+  # compression of over-the-wire representations. However, it's perfect for
+  # demonstrating the effect of compression in this tutorial.
+  sizing_factory = tff.framework.sizing_executor_factory()
+
+  # TFF has a modular runtime you can configure yourself for various
+  # environments and purposes, and this example just shows how to configure one
+  # part of it to report the size of things.
+  context = tff.framework.ExecutionContext(executor_fn=sizing_factory)
+  tff.framework.set_default_context(context)
+
+  return sizing_factory
+
 
 def create_if_not_exists(path):
   try:
@@ -242,6 +268,14 @@ def run(iterative_process: tff.templates.IterativeProcess,
     if hasattr(state, 'global_norm_mean'):
       logging.info(' THE GLOBAL NORM MEAN IS {state.global_norm_mean}')
 
+    size_info = environment.get_size_info()
+    broadcasted_bits = size_info.broadcast_bits[-1]
+    aggregated_bits = size_info.aggregate_bits[-1]
+
+    train_metrics['broadcasted'] = broadcasted_bits
+    train_metrics['aggregated'] = aggregated_bits
+
+    logging.info(' Communication cost aggregated: {aggregated_bits}   --  Broadcasted:  {broadcasted_bits}')
 
     train_metrics.update(round_metrics)
 
