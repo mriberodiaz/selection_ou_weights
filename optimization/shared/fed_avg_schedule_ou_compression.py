@@ -39,6 +39,8 @@ from tensorflow_model_optimization.python.core.internal import tensor_encoding a
 from tensorflow_federated.python.core.templates import measured_process
 from tensorflow_federated.python.core.impl.types import type_conversions
 from tensorflow_federated.python.core.api import computations
+from tensorflow_federated.python.core.api import computation_base
+from tensorflow_federated.python.core.api import computation_types
 
 
 # Convenience type aliases.
