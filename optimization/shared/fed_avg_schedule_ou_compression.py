@@ -322,6 +322,12 @@ def build_server_init_fn(
     _initialize_optimizer_vars(model, server_optimizer)
     return _get_weights(model), server_optimizer.variables(),
 
+  @computations.tf_computation()
+  def wrap_zeroed_weights():
+    model = model_fn()
+    return tf.nest.map_structure(tf.zeros_like, model.weights.trainable)
+
+
   @computations.federated_computation()
   def initialize_computation():
     model = model_fn()
@@ -331,12 +337,12 @@ def build_server_init_fn(
         model=initial_global_model,
         optimizer_state=initial_global_optimizer_state,
         round_num=tff.federated_value(0.0, tff.SERVER),
-        predicted_delta = tff.federated_value(tf.nest.map_structure(tf.zeros_like, model.weights.trainable), tff.SERVER),
-        Sy = tff.federated_value(tf.nest.map_structure(tf.zeros_like, model.weights.trainable), tff.SERVER), 
-        Syy = tff.federated_value(tf.nest.map_structure(tf.zeros_like, model.weights.trainable), tff.SERVER),
-        Sx = tff.federated_value(tf.nest.map_structure(tf.zeros_like, model.weights.trainable), tff.SERVER),
-        Sxx = tff.federated_value(tf.nest.map_structure(tf.zeros_like, model.weights.trainable), tff.SERVER),
-        Sxy = tff.federated_value(tf.nest.map_structure(tf.zeros_like, model.weights.trainable), tff.SERVER),
+        predicted_delta = intrinsics.federated_eval(wrap_zeroed_weights, placements.SERVER),
+        Sy = intrinsics.federated_eval(wrap_zeroed_weights, placements.SERVER), 
+        Syy = intrinsics.federated_eval(wrap_zeroed_weights, placements.SERVER),
+        Sx = intrinsics.federated_eval(wrap_zeroed_weights, placements.SERVER),
+        Sxx = intrinsics.federated_eval(wrap_zeroed_weights, placements.SERVER),
+        Sxy = intrinsics.federated_eval(wrap_zeroed_weights, placements.SERVER),
         num_participants= tff.federated_value(tf.constant(0, dtype=tf.int32), tff.SERVER),
         global_norm_mean = tff.federated_value(tf.constant(0.0, dtype=tf.float32), tff.SERVER),
         global_norm_std = tff.federated_value(tf.constant(0.0, dtype=tf.float32), tff.SERVER),
