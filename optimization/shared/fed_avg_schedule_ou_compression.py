@@ -327,6 +327,14 @@ def build_server_init_fn(
     model = model_fn()
     return tf.nest.map_structure(tf.zeros_like, model.weights.trainable)
 
+  @computations.tf_computation()
+  def get_int_0():
+    return tf.constant(0, dtype=tf.int32)
+  @computations.tf_computation()
+  def get_float_0():
+    return tf.constant(0.0, dtype=tf.float32)
+    
+
 
   @computations.federated_computation()
   def initialize_computation():
@@ -343,10 +351,10 @@ def build_server_init_fn(
         Sx = intrinsics.federated_eval(wrap_zeroed_weights, placements.SERVER),
         Sxx = intrinsics.federated_eval(wrap_zeroed_weights, placements.SERVER),
         Sxy = intrinsics.federated_eval(wrap_zeroed_weights, placements.SERVER),
-        num_participants= tff.federated_value(tf.constant(0, dtype=tf.int32), tff.SERVER),
-        global_norm_mean = tff.federated_value(tf.constant(0.0, dtype=tf.float32), tff.SERVER),
-        global_norm_std = tff.federated_value(tf.constant(0.0, dtype=tf.float32), tff.SERVER),
-        threshold = tff.federated_value(tf.constant(0.0, dtype=tf.float32), tff.SERVER),
+        num_participants= intrinsics.federated_eval(get_int_0, placements.SERVER),
+        global_norm_mean = intrinsics.federated_eval(get_float_0, placements.SERVER),
+        global_norm_std = intrinsics.federated_eval(get_float_0, placements.SERVER),
+        threshold = intrinsics.federated_eval(get_float_0, placements.SERVER),
         delta_aggregate_state=aggregation_process.initialize(),
         ))
 
