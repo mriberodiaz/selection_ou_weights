@@ -38,6 +38,7 @@ from tensorflow.python.ops import clip_ops
 from tensorflow_model_optimization.python.core.internal import tensor_encoding as te
 from tensorflow_federated.python.core.templates import measured_process
 from tensorflow_federated.python.core.impl.types import type_conversions
+from tensorflow_federated.python.core.api import computations
 
 
 # Convenience type aliases.
@@ -295,7 +296,7 @@ def build_server_init_fn(
   *,
   model_fn: ModelBuilder,
   server_optimizer_fn: Callable[[], tf.keras.optimizers.Optimizer],
-  aggregation_process: Optional[measured_process.MeasuredProcess]):
+  aggregation_process: Optional[measured_process.MeasuredProcess])-> computation_base.Computation:
   """Builds a `tff.tf_computation` that returns the initial `ServerState`.
 
   The attributes `ServerState.model` and `ServerState.optimizer_state` are
@@ -311,7 +312,7 @@ def build_server_init_fn(
     A `tff.tf_computation` that returns initial `ServerState`.
   """
 
-  @tff.tf_computation
+  @computations.federated_computation()
   def server_init_tf():
     server_optimizer = server_optimizer_fn()
     model = model_fn()
