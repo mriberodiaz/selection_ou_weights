@@ -324,7 +324,7 @@ def build_server_init_fn(
   @computations.federated_computation()
   def initialize_computation():
     initial_global_model, initial_global_optimizer_state = intrinsics.federated_eval(
-        server_init, placements.SERVER)
+        server_init_tf, placements.SERVER)
     return intrinsics.federated_zip(ServerState(
         model=initial_global_model,
         optimizer_state=initial_global_optimizer_state,
