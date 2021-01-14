@@ -209,6 +209,9 @@ def run(iterative_process: tff.templates.IterativeProcess,
   if test_fn is not None and not callable(test_fn):
     raise TypeError('test_fn should be callable.')
 
+  # Create a environment to get communication cost.
+  environment = set_sizing_environment()
+
   logging.info('Starting iterative_process training loop...')
   initial_state = iterative_process.initialize()
   logging.info( ' Initilized!  keys: \n')
