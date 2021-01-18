@@ -44,6 +44,8 @@ from tensorflow_federated.python.core.api import computation_types
 from tensorflow_federated.python.core.api import placements
 from tensorflow_federated.python.learning import model_utils
 
+NONE_SERVER_TYPE = computation_types.FederatedType((), placements.SERVER)
+
 
 # Convenience type aliases.
 ModelBuilder = Callable[[], tff.learning.Model]
