@@ -329,7 +329,7 @@ def build_server_init_fn(
 
   return initialize_computation
 
-@computations.tf_computation()
+@computations.tf_computation(clients_weights_type)
 def get_zero_weights_all_clients(weights):
   return tf.zeros_like(weights, dtype=tf.float32)
 
