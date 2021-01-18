@@ -53,6 +53,10 @@ OptimizerBuilder = Callable[[float], tf.keras.optimizers.Optimizer]
 ClientWeightFn = Callable[..., float]
 LRScheduleFn = Callable[[Union[int, tf.Tensor]], Union[tf.Tensor, float]]
 
+@computations.federated_computation()
+def _empty_server_initialization():
+  return intrinsics.federated_value((), placements.SERVER)
+  
 def _is_valid_stateful_process(
     process: measured_process.MeasuredProcess) -> bool:
   """Validates whether a `MeasuredProcess` is valid for model delta processes.
