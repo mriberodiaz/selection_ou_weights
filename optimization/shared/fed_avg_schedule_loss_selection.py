@@ -309,9 +309,6 @@ def build_server_init_fn(
   @computations.tf_computation()
   def get_effective_num_clients():
     return tf.constant(effective_num_clients, dtype=tf.int32)
-  @computations.tf_computation()
-  def get_float_0():
-    return tf.constant(0.0, dtype=tf.float32)
    
 
   @computations.federated_computation()
@@ -328,6 +325,11 @@ def build_server_init_fn(
         ))
 
   return initialize_computation
+
+@computations.tf_computation()
+def get_float_0(weight):
+  return tf.zeros_like(weight, dtype=tf.float32)
+
 
 def build_fed_avg_process(
     effective_num_clients: int,
@@ -414,10 +416,10 @@ def build_fed_avg_process(
         effective_num_clients= tf.int32,
         delta_aggregate_state=aggregation_state,
         )
-  
-  @computations.tf_computation(clients_weights_type)
-  def get_zero_weights_all_clients(weights):
-    return tf.zeros_like(weights, dtype=tf.float32)
+
+  # @computations.tf_computation(clients_weights_type)
+  # def get_zero_weights_all_clients(weights):
+  #   return tf.zeros_like(weights, dtype=tf.float32)
 
   @tff.tf_computation(model_input_type, model_weights_type, round_num_type)
   def client_update_fn(tf_dataset, initial_model_weights, round_num):
@@ -437,8 +439,17 @@ def build_fed_avg_process(
     _initialize_optimizer_vars(model, server_optimizer)
     return server_update(model, server_optimizer, server_state, model_delta)
 
+  @computations.tf_computation()
+  def redefine_client_weight(weights, losses):
+    values, indices = tf.math.top_k(losses, k=effective_num_clients, sorted=False)
+    expanded_indices = tf.expand_dims(indices, axis=1)
+    keep_weights = tf.gather(weights, expanded_indices)
+    final_weights = tf.tensor_scatter_nd_update(new_weights, expanded_indices, keep_weights)
+    return final_weights
+
+
   @tff.tf_computation(client_losses_type, clients_weights_type,tf.int32)
-  def zero_small_loss_clients(collected_client_losses, weights,effective_num_clients):
+  def zero_small_loss_clients(client_losses, weights,effective_num_clients):
     """Receives losses and returns participating clients.
 
     Args:
@@ -449,13 +460,10 @@ def build_fed_avg_process(
       A tuple of updated `ServerState` and the result of
       `tff.learning.Model.federated_output_computation`.
     """
-    new_weights = get_zero_weights_all_clients(weights)
-    values, indices = tf.math.top_k(losses, k=effective_num_clients, sorted=False)
-    expanded_indices = tf.expand_dims(indices, axis=1)
-    keep_weights = tf.gather(weights, expanded_indices)
-    final_weights = tf.tensor_scatter_nd_update(new_weights, expanded_indices, keep_weights)
-
-    return final_weights
+    losses_at_server = tff.federated_collect(client_losses)
+    weights_at_server = tff.federated_collect(weights)
+    final_weights = redefine_client_weight( weights_at_server, losses_at_server)
+    return tff.federated_broadcast(final_weights)
 
 
 
