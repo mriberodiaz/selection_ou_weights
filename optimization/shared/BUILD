@@ -34,6 +34,12 @@ py_library(
     deps = [":estimation_utils"]
 )
 py_library(
+    name = "fed_avg_schedule_loss_selection",
+    srcs = ["fed_avg_schedule_loss_selection.py"],
+    srcs_version = "PY3",
+    deps = [":estimation_utils"]
+)
+py_library(
     name = "fed_avg_schedule_ignore_random",
     srcs = ["fed_avg_schedule_ignore_random.py"],
     srcs_version = "PY3",
