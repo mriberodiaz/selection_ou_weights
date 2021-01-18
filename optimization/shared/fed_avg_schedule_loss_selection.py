@@ -270,7 +270,7 @@ def create_client_update_fn():
 def build_server_init_fn(
   *,
   model_fn: ModelBuilder,
-  effective_num_clients: int32,
+  effective_num_clients: int,
   server_optimizer_fn: Callable[[], tf.keras.optimizers.Optimizer],
   aggregation_process: Optional[measured_process.MeasuredProcess])-> computation_base.Computation:
   """Builds a `tff.tf_computation` that returns the initial `ServerState`.
