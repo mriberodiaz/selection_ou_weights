@@ -407,6 +407,7 @@ def build_fed_avg_process(
   model_input_type = tff.SequenceType(dummy_model.input_spec)
 
   client_losses_type = tff.SequenceType(tf.float32)
+  clients_weights_type = tff.SequenceType(tf.float32)
 
   aggregation_state = aggregation_process.initialize.type_signature.result.member
 
