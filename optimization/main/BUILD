@@ -66,7 +66,7 @@ py_binary(
 	"//optimization/shared:fed_avg_schedule_ignore_random",
 	"//optimization/shared:fed_avg_schedule_ou_random",
 	"//optimization/shared:fed_avg_schedule_ignore",
-	"//optimization/shared:fed_avg_schedule_ignore",
+	"//optimization/shared:fed_avg_schedule_loss_selection",
         "//optimization/shared:optimizer_utils",
         "//optimization/stackoverflow:federated_stackoverflow",
         "//optimization/stackoverflow_lr:federated_stackoverflow_lr",
