@@ -329,10 +329,6 @@ def build_server_init_fn(
 
   return initialize_computation
 
-@computations.tf_computation(clients_weights_type)
-def get_zero_weights_all_clients(weights):
-  return tf.zeros_like(weights, dtype=tf.float32)
-
 def build_fed_avg_process(
     effective_num_clients: int,
     model_fn: ModelBuilder,
@@ -418,6 +414,10 @@ def build_fed_avg_process(
         effective_num_clients= tf.int32,
         delta_aggregate_state=aggregation_state,
         )
+  
+  @computations.tf_computation(clients_weights_type)
+  def get_zero_weights_all_clients(weights):
+    return tf.zeros_like(weights, dtype=tf.float32)
 
   @tff.tf_computation(model_input_type, model_weights_type, round_num_type)
   def client_update_fn(tf_dataset, initial_model_weights, round_num):
