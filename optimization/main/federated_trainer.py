@@ -49,6 +49,7 @@ from optimization.shared import fed_avg_schedule_ignore as fed_ignore
 from optimization.shared import fed_avg_schedule_zero_random as fed_zero_random
 from optimization.shared import fed_avg_schedule_ou_random as fed_ou_random
 from optimization.shared import fed_avg_schedule_ignore_random as fed_ignore_random
+from optimization.shared import fed_avg_schedule_loss_selection as fed_loss
 from optimization.shared import optimizer_utils
 from optimization.stackoverflow import federated_stackoverflow
 from optimization.stackoverflow_lr import federated_stackoverflow_lr
@@ -110,6 +111,8 @@ with utils_impl.record_hparam_flags() as estimation_flags:
   flags.DEFINE_boolean('random', False, 'wheater to use random or adaptive sampling' )
   flags.DEFINE_float('prob_transmit', 1.0, 'Probability of transmitting in case random sampling')
   flags.DEFINE_boolean('compression', False, 'Use compression on client')
+  flags.DEFINE_boolean('loss', False, 'Use loss for selecting clients')
+  flags.DEFINE_integer('effective_num_clients', 0, 'Number of effective clients participating at each round')
 
 with utils_impl.record_hparam_flags() as cifar100_flags:
   # CIFAR-100 flags
@@ -244,6 +247,8 @@ def main(argv):
       fed_avg_schedule = fed_zero_random
     elif FLAGS.estimation== 'ignore':
       fed_avg_schedule = fed_ignore_random
+  elif FLAGS.loss:
+    fed_avg_schedule = fed_loss
   else:
     if FLAGS.estimation=='ou':
       if FLAGS.compression:
@@ -256,7 +261,73 @@ def main(argv):
       fed_avg_schedule = fed_ignore
     else:
       fed_avg_schedule = fed_avg
-  if not FLAGS.compression:
+
+  if FLAGS.loss and FLAGS.compression:
+    def iterative_process_builder(
+      model_fn: Callable[[], tff.learning.Model],
+      client_weight_fn: Optional[Callable[[Any], tf.Tensor]] = None,
+      ) -> tff.templates.IterativeProcess:
+      """Creates an iterative process using a given TFF `model_fn`.
+
+      Args:
+        model_fn: A no-arg function returning a `tff.learning.Model`.
+        client_weight_fn: Optional function that takes the output of
+          `model.report_local_outputs` and returns a tensor providing the weight
+          in the federated average of model deltas. If not provided, the default
+          is the total number of examples processed on device.
+
+      Returns:
+        A `tff.templates.IterativeProcess`.
+      """
+      def mean_encoder_fn(value):
+        """Function for building encoded mean."""
+        spec = tf.TensorSpec(value.shape, value.dtype)
+        if value.shape.num_elements() > 10000:
+          return te.encoders.as_gather_encoder(
+              te.encoders.uniform_quantization(bits=8), spec)
+        else:
+          return te.encoders.as_gather_encoder(te.encoders.identity(), spec)
+
+      encoded_mean_process = (
+        tff.learning.framework.build_encoded_mean_process_from_model(
+          model_fn, mean_encoder_fn))
+      return fed_avg_schedule.build_fed_avg_process(
+          effective_num_clients = FLAGS.effective_num_clients,
+          model_fn=model_fn,
+          client_optimizer_fn=client_optimizer_fn,
+          client_lr=client_lr_schedule,
+          server_optimizer_fn=server_optimizer_fn,
+          server_lr=server_lr_schedule,
+          client_weight_fn=client_weight_fn, 
+          aggregation_process = encoded_mean_process)
+  elif FLAGS.loss and not FLAGS.compression:
+    def iterative_process_builder(
+      model_fn: Callable[[], tff.learning.Model],
+      client_weight_fn: Optional[Callable[[Any], tf.Tensor]] = None,
+      ) -> tff.templates.IterativeProcess:
+      """Creates an iterative process using a given TFF `model_fn`.
+
+      Args:
+        model_fn: A no-arg function returning a `tff.learning.Model`.
+        client_weight_fn: Optional function that takes the output of
+          `model.report_local_outputs` and returns a tensor providing the weight
+          in the federated average of model deltas. If not provided, the default
+          is the total number of examples processed on device.
+
+      Returns:
+        A `tff.templates.IterativeProcess`.
+      """
+      return fed_avg_schedule.build_fed_avg_process(
+          effective_num_clients = FLAGS.effective_num_clients,
+          model_fn=model_fn,
+          client_optimizer_fn=client_optimizer_fn,
+          client_lr=client_lr_schedule,
+          server_optimizer_fn=server_optimizer_fn,
+          server_lr=server_lr_schedule,
+          client_weight_fn=client_weight_fn, 
+          aggregation_process = None)
+
+  elif not FLAGS.compression:
     def iterative_process_builder(
         model_fn: Callable[[], tff.learning.Model],
         client_weight_fn: Optional[Callable[[Any], tf.Tensor]] = None,
