@@ -439,7 +439,7 @@ def build_fed_avg_process(
     _initialize_optimizer_vars(model, server_optimizer)
     return server_update(model, server_optimizer, server_state, model_delta)
 
-  @computations.tf_computation()
+  @tf.function
   def redefine_client_weight(weights, losses):
     values, indices = tf.math.top_k(losses, k=effective_num_clients, sorted=False)
     expanded_indices = tf.expand_dims(indices, axis=1)
