@@ -460,10 +460,7 @@ def build_fed_avg_process(
       A tuple of updated `ServerState` and the result of
       `tff.learning.Model.federated_output_computation`.
     """
-    losses_at_server = tff.federated_collect(client_losses)
-    weights_at_server = tff.federated_collect(weights)
-    final_weights = redefine_client_weight( weights_at_server, losses_at_server)
-    return tff.federated_broadcast(final_weights)
+    return redefine_client_weight( weights_at_server, losses_at_server)
 
 
 
@@ -490,14 +487,19 @@ def build_fed_avg_process(
 
     client_weight = client_outputs.client_weight
 
+    #LOSS SELECTION:
+    losses_at_server = tff.federated_collect(client_outputs.model_output, )
+    weights_at_server = tff.federated_collect(client_weight)
+    final_weights = 
     selected_clients_weights = tff.federated_map(
       zero_small_loss_clients,
-      (client_outputs.model_output, client_weight, server_state.effective_num_clients))
+      (losses_at_server, weights_at_server, server_state.effective_num_clients))
 
+    selected_clients_weights_at_client = tff.federated_broadcast(selected_clients_weights)
 
     aggregation_output = aggregation_process.next(
         server_state.delta_aggregate_state, client_outputs.weights_delta,
-        selected_clients_weights)
+        selected_clients_weights_at_client)
 
     # model_delta = tff.federated_mean(
     #     client_outputs.weights_delta, weight=client_weight)
