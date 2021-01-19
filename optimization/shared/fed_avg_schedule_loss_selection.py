@@ -434,10 +434,13 @@ def build_fed_avg_process(
 
   @tf.function
   def redefine_client_weight( losses,weights, effective_num_clients):
+    flat_loss = tf.reshape(losses, shape = [-1])
+    flat_weights = tf.reshape(weights, shape = [-1])
+
     new_weights = tf.zeros_like(weights, tf.float32)
-    values, indices = tf.math.top_k(losses, k=effective_num_clients, sorted=False)
+    values, indices = tf.math.top_k(flat_loss, k=effective_num_clients, sorted=False)
     expanded_indices = tf.expand_dims(indices, axis=1)
-    keep_weights = tf.gather(weights, expanded_indices)
+    keep_weights = tf.gather(flat_weights, expanded_indices)
     final_weights = tf.tensor_scatter_nd_update(new_weights, expanded_indices, keep_weights)
     return final_weights
 
