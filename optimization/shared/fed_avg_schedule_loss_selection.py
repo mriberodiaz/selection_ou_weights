@@ -432,7 +432,7 @@ def build_fed_avg_process(
     _initialize_optimizer_vars(model, server_optimizer)
     return server_update(model, server_optimizer, server_state, model_delta)
 
-  @tf.function
+  @tff.tf_computation(client_losses_type, clients_weights_type,tf.int32)
   def redefine_client_weight( losses,weights, effective_num_clients):
     flat_loss = tf.reshape(losses, shape = [-1])
     flat_weights = tf.reshape(weights, shape = [-1])
@@ -445,7 +445,9 @@ def build_fed_avg_process(
     return final_weights
 
 
-  @tff.tf_computation(client_losses_type, clients_weights_type,tf.int32)
+  @tff.federated_computation(tff.FederatedType(client_losses_type, tff.SERVER),
+  tff.FederatedType( clients_weights_type, tff.SERVER),
+  tff.FederatedType(tf.int32, tff.SERVER))
   def zero_small_loss_clients(losses_at_server, weights_at_server, effective_num_clients):
     """Receives losses and returns participating clients.
 
