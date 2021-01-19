@@ -449,7 +449,7 @@ def build_fed_avg_process(
 
 
   @tff.tf_computation(client_losses_type, clients_weights_type,tf.int32)
-  def zero_small_loss_clients(client_losses, weights,effective_num_clients):
+  def zero_small_loss_clients(losses_at_server, weights_at_server, effective_num_clients):
     """Receives losses and returns participating clients.
 
     Args:
@@ -490,7 +490,7 @@ def build_fed_avg_process(
     #LOSS SELECTION:
     losses_at_server = tff.federated_collect(client_outputs.model_output, )
     weights_at_server = tff.federated_collect(client_weight)
-    final_weights = 
+
     selected_clients_weights = tff.federated_map(
       zero_small_loss_clients,
       (losses_at_server, weights_at_server, server_state.effective_num_clients))
