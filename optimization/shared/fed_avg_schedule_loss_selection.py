@@ -301,10 +301,6 @@ def build_server_init_fn(
     _initialize_optimizer_vars(model, server_optimizer)
     return _get_weights(model), server_optimizer.variables(),
 
-  @computations.tf_computation()
-  def wrap_zeroed_weights():
-    model = model_fn()
-    return tf.nest.map_structure(tf.zeros_like, model.weights.trainable)
 
   @computations.tf_computation()
   def get_effective_num_clients():
@@ -326,9 +322,6 @@ def build_server_init_fn(
 
   return initialize_computation
 
-@computations.tf_computation()
-def get_float_0(weight):
-  return tf.zeros_like(weight, dtype=tf.float32)
 
 
 def build_fed_avg_process(
@@ -440,7 +433,8 @@ def build_fed_avg_process(
     return server_update(model, server_optimizer, server_state, model_delta)
 
   @tf.function
-  def redefine_client_weight(weights, losses):
+  def redefine_client_weight( losses,weights, effective_num_clients):
+    new_weights = tf.zeros_like(weights, tf.float32)
     values, indices = tf.math.top_k(losses, k=effective_num_clients, sorted=False)
     expanded_indices = tf.expand_dims(indices, axis=1)
     keep_weights = tf.gather(weights, expanded_indices)
@@ -460,7 +454,7 @@ def build_fed_avg_process(
       A tuple of updated `ServerState` and the result of
       `tff.learning.Model.federated_output_computation`.
     """
-    return redefine_client_weight( weights_at_server, losses_at_server)
+    return redefine_client_weight( losses_at_server, weights_at_server, effective_num_clients)
 
 
 
@@ -488,7 +482,7 @@ def build_fed_avg_process(
     client_weight = client_outputs.client_weight
 
     #LOSS SELECTION:
-    losses_at_server = tff.federated_collect(client_outputs.model_output, )
+    losses_at_server = tff.federated_collect(client_outputs.model_output)
     weights_at_server = tff.federated_collect(client_weight)
 
     selected_clients_weights = tff.federated_map(
