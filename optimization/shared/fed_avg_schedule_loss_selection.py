@@ -495,7 +495,7 @@ def build_fed_avg_process(
 
     client_outputs = tff.federated_map(
         client_update_fn,
-        (federated_dataset, client_model, client_round_num,client_predicted_delta, client_threshold ))
+        (federated_dataset, client_model, client_round_num))
 
     client_weight = client_outputs.client_weight
 
