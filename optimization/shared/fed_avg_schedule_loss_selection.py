@@ -327,7 +327,7 @@ def build_server_init_fn(
 def redefine_client_weight( losses,weights, effective_num_clients):
   flat_weights = tf.reshape(weights, shape = [-1])
   flat_loss = tf.reshape(tf.convert_to_tensor(losses, dtype = tf.float32), shape = [-1])
-  new_weights = tf.zeros_like(weights, tf.float32)
+  new_weights = tf.expand_dims(tf.zeros_like(weights, tf.float32), axis = 1)
   values, indices = tf.math.top_k(flat_loss, k=effective_num_clients, sorted=False)
   expanded_indices = tf.expand_dims(indices, axis=1)
   keep_weights = tf.gather(flat_weights, expanded_indices)
