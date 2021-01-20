@@ -324,8 +324,8 @@ def build_server_init_fn(
 
 @tf.function
 def redefine_client_weight( losses,weights, effective_num_clients):
-  flat_loss = tf.reshape(tf.convert_to_tensor(losses, dtype = tf.float32), shape = [-1])
   flat_weights = tf.reshape(weights, shape = [-1])
+  flat_loss = tf.reshape(tf.convert_to_tensor(losses, dtype = tf.float32), shape = [-1])
   new_weights = tf.zeros_like(weights, tf.float32)
   values, indices = tf.math.top_k(flat_loss, k=effective_num_clients, sorted=False)
   expanded_indices = tf.expand_dims(indices, axis=1)
@@ -423,6 +423,15 @@ def build_fed_avg_process(
   # @computations.tf_computation(clients_weights_type)
   # def get_zero_weights_all_clients(weights):
   #   return tf.zeros_like(weights, dtype=tf.float32)
+
+  ######################################################
+  # def federated_output(local_outputs):
+  #   return federated_aggregate_keras_metric(self.get_metrics(), local_outputs)
+
+  # federated_output_computation = computations.federated_computation(
+  #       federated_output, federated_local_outputs_type)
+
+
 
   @tff.tf_computation(model_input_type, model_weights_type, round_num_type)
   def client_update_fn(tf_dataset, initial_model_weights, round_num):
