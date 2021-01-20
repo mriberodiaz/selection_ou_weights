@@ -42,7 +42,7 @@ from tensorflow_federated.python.core.api import computations
 from tensorflow_federated.python.core.api import computation_base
 from tensorflow_federated.python.core.api import computation_types
 from tensorflow_federated.python.core.api import placements
-from tensorflow_federated.python.learning import 
+from tensorflow_federated.python.learning import model_utils
 import tensorflow_datasets as tfds
 
 NONE_SERVER_TYPE = computation_types.FederatedType((), placements.SERVER)
