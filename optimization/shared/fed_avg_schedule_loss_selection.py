@@ -472,9 +472,9 @@ def build_fed_avg_process(
     """
     return redefine_client_weight( losses_at_server, weights_at_server, effective_num_clients)
 
-  @tff.tf_computation(client_losses_type)
-  def dataset_to_tensor_fn(dataset):
-    return dataset_to_tensor(dataset)
+  # @tff.tf_computation(client_losses_type)
+  # def dataset_to_tensor_fn(dataset):
+  #   return dataset_to_tensor(dataset)
 
   @tff.federated_computation(
       tff.FederatedType(server_state_type, tff.SERVER),
