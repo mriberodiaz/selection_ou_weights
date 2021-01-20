@@ -322,6 +322,16 @@ def build_server_init_fn(
 
   return initialize_computation
 
+@tf.function
+def redefine_client_weight( losses,weights, effective_num_clients):
+  flat_loss = tf.reshape(losses, shape = [-1])
+  flat_weights = tf.reshape(weights, shape = [-1])
+  new_weights = tf.zeros_like(weights, tf.float32)
+  values, indices = tf.math.top_k(flat_loss, k=effective_num_clients, sorted=False)
+  expanded_indices = tf.expand_dims(indices, axis=1)
+  keep_weights = tf.gather(flat_weights, expanded_indices)
+  final_weights = tf.tensor_scatter_nd_update(new_weights, expanded_indices, keep_weights)
+  return final_weights
 
 
 def build_fed_avg_process(
@@ -432,22 +442,8 @@ def build_fed_avg_process(
     _initialize_optimizer_vars(model, server_optimizer)
     return server_update(model, server_optimizer, server_state, model_delta)
 
+
   @tff.tf_computation(client_losses_type, clients_weights_type,tf.int32)
-  def redefine_client_weight( losses,weights, effective_num_clients):
-    flat_loss = tf.reshape(losses, shape = [-1])
-    flat_weights = tf.reshape(weights, shape = [-1])
-
-    new_weights = tf.zeros_like(weights, tf.float32)
-    values, indices = tf.math.top_k(flat_loss, k=effective_num_clients, sorted=False)
-    expanded_indices = tf.expand_dims(indices, axis=1)
-    keep_weights = tf.gather(flat_weights, expanded_indices)
-    final_weights = tf.tensor_scatter_nd_update(new_weights, expanded_indices, keep_weights)
-    return final_weights
-
-
-  @tff.federated_computation(tff.FederatedType(client_losses_type, tff.SERVER),
-  tff.FederatedType( clients_weights_type, tff.SERVER),
-  tff.FederatedType(tf.int32, tff.SERVER))
   def zero_small_loss_clients(losses_at_server, weights_at_server, effective_num_clients):
     """Receives losses and returns participating clients.
 
