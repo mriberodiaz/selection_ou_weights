@@ -42,7 +42,8 @@ from tensorflow_federated.python.core.api import computations
 from tensorflow_federated.python.core.api import computation_base
 from tensorflow_federated.python.core.api import computation_types
 from tensorflow_federated.python.core.api import placements
-from tensorflow_federated.python.learning import model_utils
+from tensorflow_federated.python.learning import 
+import tensorflow_datasets as tfds
 
 NONE_SERVER_TYPE = computation_types.FederatedType((), placements.SERVER)
 
@@ -333,6 +334,10 @@ def redefine_client_weight( losses,weights, effective_num_clients):
   final_weights = tf.tensor_scatter_nd_update(new_weights, expanded_indices, keep_weights)
   return final_weights
 
+@tf.function
+def dataset_to_tensor(dataset):
+  return tf.convert_to_tensor(tfds.as_numpy(dataset))
+
 
 def build_fed_avg_process(
     effective_num_clients: int,
@@ -466,7 +471,9 @@ def build_fed_avg_process(
     """
     return redefine_client_weight( losses_at_server, weights_at_server, effective_num_clients)
 
-
+  @tff.tf_computation(client_losses_type)
+  def dataset_to_tensor_fn(dataset):
+    return dataset_to_tensor(dataset)
 
   @tff.federated_computation(
       tff.FederatedType(server_state_type, tff.SERVER),
@@ -502,6 +509,9 @@ def build_fed_avg_process(
 
     losses_at_server = tff.federated_aggregate(client_outputs.model_output, zero, accumulate, merge, report)
     weights_at_server = tff.federated_collect(client_weight, zero, accumulate, merge, report)
+
+    losses_tensor_at_server = tff.federated_map(dataset_to_tensor_fn, losses_at_server)
+    weights_tensor_at_server = tff.federated_map(dataset_to_tensor_fn, weights_at_server)
 
     selected_clients_weights = tff.federated_map(
       zero_small_loss_clients,
