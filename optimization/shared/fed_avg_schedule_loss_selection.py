@@ -508,8 +508,8 @@ def build_fed_avg_process(
     merge = lambda u1,u2: u1+u2
     report = lambda u: tf.reshape(u, shape=[-1])
 
-    losses_at_server = tff.federated_aggregate(client_outputs.model_output, zero, accumulate, merge, report)
     weights_at_server = tff.federated_aggregate(client_weight, zero, accumulate, merge, report)
+    losses_at_server = tff.federated_aggregate(client_outputs.model_output, zero, accumulate, merge, report)
 
     selected_clients_weights = tff.federated_map(
       zero_small_loss_clients,
