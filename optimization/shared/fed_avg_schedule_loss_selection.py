@@ -268,7 +268,7 @@ def create_client_update_fn():
 
     return ClientOutput(
         weights_delta, client_weight,  aggregated_outputs,
-        collections.OrderedDict([('num_examples', num_examples)])), client_weight
+        collections.OrderedDict([('num_examples', num_examples)]))
 
   return client_update
 
@@ -485,15 +485,23 @@ def build_fed_avg_process(
     client_model = tff.federated_broadcast(server_state.model)
     client_round_num = tff.federated_broadcast(server_state.round_num)
 
-    client_outputs, client_weights2 = tff.federated_map(
+    client_outputs = tff.federated_map(
         client_update_fn,
         (federated_dataset, client_model, client_round_num,client_predicted_delta, client_threshold ))
 
     client_weight = client_outputs.client_weight
 
     #LOSS SELECTION:
-    losses_at_server = tff.federated_collect(client_outputs.model_output)
-    weights_at_server = tff.federated_collect(client_weights2)
+    # losses_at_server = tff.federated_collect(client_outputs.model_output)
+    # weights_at_server = tff.federated_collect(client_weight)
+
+    zero = []
+    accumulate = lambda u,t: u +[t]
+    merge = lambda u1,u2: u1+u2
+    report = lambda u: u
+
+    losses_at_server = tff.federated_aggregate(client_outputs.model_output, zero, accumulate, merge, report)
+    weights_at_server = tff.federated_collect(client_weight, zero, accumulate, merge, report)
 
     selected_clients_weights = tff.federated_map(
       zero_small_loss_clients,
