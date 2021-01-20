@@ -112,7 +112,7 @@ with utils_impl.record_hparam_flags() as estimation_flags:
   flags.DEFINE_float('prob_transmit', 1.0, 'Probability of transmitting in case random sampling')
   flags.DEFINE_boolean('compression', False, 'Use compression on client')
   flags.DEFINE_boolean('loss', False, 'Use loss for selecting clients')
-  flags.DEFINE_integer('effective_num_clients', 0, 'Number of effective clients participating at each round')
+  flags.DEFINE_integer('effective_num_clients', 5, 'Number of effective clients participating at each round')
 
 with utils_impl.record_hparam_flags() as cifar100_flags:
   # CIFAR-100 flags
@@ -292,6 +292,7 @@ def main(argv):
         tff.learning.framework.build_encoded_mean_process_from_model(
           model_fn, mean_encoder_fn))
       return fed_avg_schedule.build_fed_avg_process(
+          total_clients = FLAGS.clients_per_round,
           effective_num_clients = FLAGS.effective_num_clients,
           model_fn=model_fn,
           client_optimizer_fn=client_optimizer_fn,
@@ -318,6 +319,7 @@ def main(argv):
         A `tff.templates.IterativeProcess`.
       """
       return fed_avg_schedule.build_fed_avg_process(
+          total_clients = FLAGS.clients_per_round,
           effective_num_clients = FLAGS.effective_num_clients,
           model_fn=model_fn,
           client_optimizer_fn=client_optimizer_fn,
