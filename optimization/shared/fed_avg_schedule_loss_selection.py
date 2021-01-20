@@ -259,16 +259,16 @@ def create_client_update_fn():
 
     if has_non_finite_weight > 0:
       client_weight = tf.constant(0, dtype=tf.float32)
-    elif client_weight_fn is None:
+    else :
       client_weight = tf.cast(num_examples, dtype=tf.float32)
-    else:
-      client_weight = client_weight_fn(aggregated_outputs)
+    # else:
+      # client_weight = client_weight_fn(aggregated_outputs)
 
     #weights_delta_encoded = tf.nest.map_structure(mean_encoder_fn, weights_delta)
 
     return ClientOutput(
         weights_delta, client_weight,  aggregated_outputs,
-        collections.OrderedDict([('num_examples', num_examples)]))
+        collections.OrderedDict([('num_examples', num_examples)])), client_weight
 
   return client_update
 
@@ -485,7 +485,7 @@ def build_fed_avg_process(
     client_model = tff.federated_broadcast(server_state.model)
     client_round_num = tff.federated_broadcast(server_state.round_num)
 
-    client_outputs = tff.federated_map(
+    client_outputs, client_weights2 = tff.federated_map(
         client_update_fn,
         (federated_dataset, client_model, client_round_num,client_predicted_delta, client_threshold ))
 
@@ -493,7 +493,7 @@ def build_fed_avg_process(
 
     #LOSS SELECTION:
     losses_at_server = tff.federated_collect(client_outputs.model_output)
-    weights_at_server = tff.federated_collect(client_weight)
+    weights_at_server = tff.federated_collect(client_weights2)
 
     selected_clients_weights = tff.federated_map(
       zero_small_loss_clients,
