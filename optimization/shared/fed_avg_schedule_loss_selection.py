@@ -340,6 +340,7 @@ def dataset_to_tensor(dataset):
 
 
 def build_fed_avg_process(
+    total_clients: int,
     effective_num_clients: int,
     model_fn: ModelBuilder,
     client_optimizer_fn: OptimizerBuilder,
@@ -412,8 +413,8 @@ def build_fed_avg_process(
   tf_dataset_type = tff.SequenceType(dummy_model.input_spec)
   model_input_type = tff.SequenceType(dummy_model.input_spec)
 
-  client_losses_type = tff.TensorType(dtype=tf.float32, shape=[5,])
-  clients_weights_type = tf.float32
+  client_losses_at_server_type = tff.TensorType(dtype=tf.float32, shape=[total_clients,])
+  clients_weights_at_server_type = tff.TensorType(dtype=tf.float32, shape=[total_clients,])
 
   aggregation_state = aggregation_process.initialize.type_signature.result.member
 
@@ -457,7 +458,7 @@ def build_fed_avg_process(
     return server_update(model, server_optimizer, server_state, model_delta)
 
 
-  @tff.tf_computation(client_losses_type, clients_weights_type,tf.int32)
+  @tff.tf_computation(client_losses_at_server_type, clients_weights_at_server_type,tf.int32)
   def zero_small_loss_clients(losses_at_server, weights_at_server, effective_num_clients):
     """Receives losses and returns participating clients.
 
@@ -505,13 +506,10 @@ def build_fed_avg_process(
     zero = []
     accumulate = lambda u,t: u +[t]
     merge = lambda u1,u2: u1+u2
-    report = lambda u: u
+    report = lambda u: tf.reshape(u, shape=[-1])
 
     losses_at_server = tff.federated_aggregate(client_outputs.model_output, zero, accumulate, merge, report)
-    weights_at_server = tff.federated_collect(client_weight, zero, accumulate, merge, report)
-
-    losses_tensor_at_server = tff.federated_map(dataset_to_tensor_fn, losses_at_server)
-    weights_tensor_at_server = tff.federated_map(dataset_to_tensor_fn, weights_at_server)
+    weights_at_server = tff.federated_aggregate(client_weight, zero, accumulate, merge, report)
 
     selected_clients_weights = tff.federated_map(
       zero_small_loss_clients,
