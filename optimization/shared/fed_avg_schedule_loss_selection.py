@@ -507,7 +507,7 @@ def build_fed_avg_process(
     list_type = tff.SequenceType( tff.TensorType(dtype=tf.float32))
     @computations.tf_computation(list_type, tf.float32)
     def accumulate(u,t):
-      return lambda u,t: u +[t]
+      return u +[t]
     @computations.tf_computation(list_type, list_type)
     def merge(u1,u2):
       return u1+u2
