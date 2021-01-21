@@ -505,14 +505,14 @@ def build_fed_avg_process(
 
     zero = []
     list_type = tff.SequenceType( tff.TensorType(dtype=tf.float32))
-    @computations.tf_computation(list_type, tf.float32)
+    @computations.tf_computation(list, tf.float32)
     def accumulate(u,t):
       return u +[t]
-    @computations.tf_computation(list_type, list_type)
+    @computations.tf_computation(list, list)
     def merge(u1,u2):
       return u1+u2
     
-    @computations.tf_computation(list_type)
+    @computations.tf_computation(list)
     def report(u):
      return tf.reshape(u, shape=[-1])
 
