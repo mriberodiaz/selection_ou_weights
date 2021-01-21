@@ -518,7 +518,7 @@ def build_fed_avg_process(
     #  return tf.reshape(u, shape=[-1])
 
     #weights_at_server = tff.federated_aggregate(client_weight, zero, accumulate, merge, report)
-    weight_at_server = tff.federated_collect(clients_weight)
+    weight_at_server = tff.federated_collect(client_weight)
     losses_at_server = tff.federated_collect(client_outputs.model_output)
     weights_at_server_unfold = tff.sequence_reduce(client_weight, zero, accumulate)
     losses_at_server_unfold = tff.sequence_reduce(client_weight, zero, accumulate)
