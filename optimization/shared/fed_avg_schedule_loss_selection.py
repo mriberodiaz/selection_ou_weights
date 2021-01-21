@@ -509,22 +509,24 @@ def build_fed_avg_process(
     @computations.tf_computation(list_type, tf.float32)
     def accumulate(u,t):
       return u +[t]
-    @computations.tf_computation(list, list)
-    def merge(u1,u2):
-      return u1+u2
+    # @computations.tf_computation(list, list)
+    # def merge(u1,u2):
+    #   return u1+u2
     
-    @computations.tf_computation(list)
-    def report(u):
-     return tf.reshape(u, shape=[-1])
+    # @computations.tf_computation(list)
+    # def report(u):
+    #  return tf.reshape(u, shape=[-1])
 
     #weights_at_server = tff.federated_aggregate(client_weight, zero, accumulate, merge, report)
     weight_at_server = tff.federated_collect(clients_weight)
+    losses_at_server = tff.federated_collect(client_outputs.model_output)
     weights_at_server_unfold = tff.sequence_reduce(client_weight, zero, accumulate)
-    losses_at_server = tff.federated_aggregate(client_outputs.model_output, zero, accumulate, merge, report)
+    losses_at_server_unfold = tff.sequence_reduce(client_weight, zero, accumulate)
+    #losses_at_server = tff.federated_aggregate(client_outputs.model_output, zero, accumulate, merge, report)
 
     selected_clients_weights = tff.federated_map(
       zero_small_loss_clients,
-      (losses_at_server, weights_at_server_unfold, server_state.effective_num_clients))
+      (losses_at_server_unfold, weights_at_server_unfold, server_state.effective_num_clients))
 
     selected_clients_weights_at_client = tff.federated_broadcast(selected_clients_weights)
 
