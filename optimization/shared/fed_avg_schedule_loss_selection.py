@@ -504,7 +504,8 @@ def build_fed_avg_process(
     # weights_at_server = tff.federated_collect(client_weight)
 
     zero = []
-    list_type = tff.SequenceType( tff.TensorType(dtype=tf.float32))
+    # list_type = tff.SequenceType( tff.TensorType(dtype=tf.float32))
+    list_type = tff.to_type([])
     @computations.tf_computation(list_type, tf.float32)
     def accumulate(u,t):
       return u +[t]
