@@ -506,9 +506,10 @@ def build_fed_avg_process(
     zero = tf.zeros(shape=[0,1] , dtype=tf.float32)
     # list_type = tff.SequenceType( tff.TensorType(dtype=tf.float32))
     list_type = tff.TensorType(dtype = tf.float32)
+    one_value = tff.TensorType()
     @computations.tf_computation(list_type, tf.float32)
     def accumulate(u,t):
-      t = tf.expand_dims(t, axis=1)
+      t = tf.reshape(t, shape=[1,1])
       return tf.concat([u,t], axis = 0)
     # @computations.tf_computation(list, list)
     # def merge(u1,u2):
