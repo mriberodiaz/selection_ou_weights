@@ -205,6 +205,7 @@ class ClientOutput(object):
   client_weight = attr.ib()
   model_output = attr.ib()
   optimizer_output = attr.ib()
+  client_id = attr.ib()
 
 def create_client_update_fn():
   """Returns a tf.function for the client_update.
@@ -219,6 +220,7 @@ def create_client_update_fn():
                     dataset,
                     initial_weights,
                     client_optimizer,
+                    client_id,
                     client_weight_fn=None):
     """Updates client model.
 
@@ -259,9 +261,9 @@ def create_client_update_fn():
 
 
     if has_non_finite_weight > 0:
-      client_weight = tf.constant(0, dtype=tf.float32)
+      client_weight = tf.constant([[0]], dtype=tf.float32)
     else :
-      client_weight = tf.cast(num_examples, dtype=tf.float32)
+      client_weight = tf.cast([[num_examples]], dtype=tf.float32)
     # else:
       # client_weight = client_weight_fn(aggregated_outputs)
 
@@ -269,7 +271,7 @@ def create_client_update_fn():
 
     return ClientOutput(
         weights_delta, client_weight,  aggregated_outputs,
-        collections.OrderedDict([('num_examples', num_examples)]))
+        collections.OrderedDict([('num_examples', num_examples)]), client_id)
 
   return client_update
 
@@ -306,6 +308,10 @@ def build_server_init_fn(
   @computations.tf_computation()
   def get_effective_num_clients():
     return tf.constant(effective_num_clients, dtype=tf.int32)
+
+  @computations.tf_computation()
+  def get_ids():
+    return [tf.constant([[i]], dtype=tf.int32) for i in range(total_clients)]
    
 
   @computations.federated_computation()
@@ -333,10 +339,6 @@ def redefine_client_weight( losses,weights, effective_num_clients):
   keep_weights = tf.gather(flat_weights, expanded_indices)
   final_weights = tf.tensor_scatter_nd_update(new_weights, expanded_indices, keep_weights)  
   return final_weights
-
-@tf.function
-def dataset_to_tensor(dataset):
-  return tf.convert_to_tensor(tfds.as_numpy(dataset))
 
 
 def build_fed_avg_process(
@@ -418,12 +420,15 @@ def build_fed_avg_process(
 
   aggregation_state = aggregation_process.initialize.type_signature.result.member
 
+  ids_type = tff.SequenceType(tff.TensorType(dtype = tf.float32, shape=[1,1]))
+
   server_state_type = ServerState(
         model=model_weights_type,
         optimizer_state=optimizer_variable_type,
         round_num=round_num_type,
         effective_num_clients= tf.int32,
         delta_aggregate_state=aggregation_state,
+        ids = ids_type
         )
 
   # @computations.tf_computation(clients_weights_type)
@@ -439,13 +444,13 @@ def build_fed_avg_process(
 
 
 
-  @tff.tf_computation(model_input_type, model_weights_type, round_num_type)
-  def client_update_fn(tf_dataset, initial_model_weights, round_num):
+  @tff.tf_computation(model_input_type, model_weights_type, round_num_type, tf.int32)
+  def client_update_fn(tf_dataset, initial_model_weights, round_num, client_id):
     client_lr = client_lr_schedule(round_num)
     client_optimizer = client_optimizer_fn(client_lr)
     client_update = create_client_update_fn()
     return client_update(model_fn(), tf_dataset, initial_model_weights,
-                         client_optimizer,client_weight_fn,)
+                         client_optimizer,client_id,client_weight_fn)
 
   @tff.tf_computation(server_state_type, model_weights_type.trainable)
   def server_update_fn(server_state, model_delta):
@@ -492,49 +497,52 @@ def build_fed_avg_process(
     """
     client_model = tff.federated_broadcast(server_state.model)
     client_round_num = tff.federated_broadcast(server_state.round_num)
+    ids = intrinsics.federated_eval(get_ids, placements.CLIENTS)
 
     client_outputs = tff.federated_map(
         client_update_fn,
-        (federated_dataset, client_model, client_round_num))
+        (federated_dataset, client_model, client_round_num, ids))
 
     client_weight = client_outputs.client_weight
+    client_id = client_outputs.client_id
 
     #LOSS SELECTION:
     # losses_at_server = tff.federated_collect(client_outputs.model_output)
     # weights_at_server = tff.federated_collect(client_weight)
 
-    zero = tf.zeros(shape=[0,1] , dtype=tf.float32)
+    zero = tf.zeros(shape=[total_clients,1] , dtype=tf.float32)
+    at_server_type = tff.TensorType(shape=[total_clients,1],dtype=tf.float32)
     # list_type = tff.SequenceType( tff.TensorType(dtype=tf.float32))
-    list_type = tff.TensorType(dtype = tf.float32)
-    one_value = tff.TensorType(dtype = tf.float32)
-    @computations.tf_computation(list_type, tf.float32)
-    def accumulate(u,t):
-      t = tf.reshape(t, shape=[1,1])
-      return tf.concat([u,t], axis = 0)
-    # @computations.tf_computation(list, list)
-    # def merge(u1,u2):
-    #   return u1+u2
-    
-    # @computations.tf_computation(list)
-    # def report(u):
-    #  return tf.reshape(u, shape=[-1])
+    client_output_type = client_update_fn.type_signature.result.member
+    @computations.tf_computation(at_server_type, client_output_type)
+    def accumulate_weight(u,t):
+      value = t.client_weight
+      index = t.client_id
+      new_u = tf.tensor_scatter_nd_update(u,index,value)  
+      return new_u
 
-    #weights_at_server = tff.federated_aggregate(client_weight, zero, accumulate, merge, report)
-    weights_at_server = tff.federated_collect(client_weight)
-    losses_at_server = tff.federated_collect(client_outputs.model_output)
-    weights_at_server_unfold = tff.sequence_reduce(weights_at_server, zero, accumulate)
-    losses_at_server_unfold = tff.sequence_reduce(losses_at_server, zero, accumulate)
+    @computations.tf_computation(at_server_type, client_output_type)
+    def accumulate_loss(u,t):
+      value = t.model_output
+      index = t.client_id
+      new_u = tf.tensor_scatter_nd_update(u,index,value)  
+      return new_u
+
+    output_at_server= tff.federated_collect(client_outputs)
+    
+    weights_at_server = tff.sequence_reduce(output_at_server, zero, accumulate_weight)
+    losses_at_server_unfold = tff.sequence_reduce(output_at_server, zero, accumulate_loss)
     #losses_at_server = tff.federated_aggregate(client_outputs.model_output, zero, accumulate, merge, report)
 
     selected_clients_weights = tff.federated_map(
       zero_small_loss_clients,
-      (losses_at_server_unfold, weights_at_server_unfold, server_state.effective_num_clients))
+      (losses_at_server, weights_at_server, server_state.effective_num_clients))
 
-    selected_clients_weights_at_client = tff.federated_broadcast(selected_clients_weights)
+    # selected_clients_weights_at_client = tff.federated_broadcast(selected_clients_weights)
 
     aggregation_output = aggregation_process.next(
         server_state.delta_aggregate_state, client_outputs.weights_delta,
-        selected_clients_weights_at_client)
+        selected_clients_weights)
 
     # model_delta = tff.federated_mean(
     #     client_outputs.weights_delta, weight=client_weight)
