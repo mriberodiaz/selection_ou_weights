@@ -308,10 +308,6 @@ def build_server_init_fn(
   @computations.tf_computation()
   def get_effective_num_clients():
     return tf.constant(effective_num_clients, dtype=tf.int32)
-
-  @computations.tf_computation()
-  def get_ids():
-    return [tf.constant([[i]], dtype=tf.int32) for i in range(total_clients)]
    
 
   @computations.federated_computation()
@@ -442,6 +438,9 @@ def build_fed_avg_process(
   # federated_output_computation = computations.federated_computation(
   #       federated_output, federated_local_outputs_type)
 
+  @computations.tf_computation()
+  def get_ids():
+    return [tf.constant([[i]], dtype=tf.int32) for i in range(total_clients)]
 
 
   @tff.tf_computation(model_input_type, model_weights_type, round_num_type, tf.int32)
