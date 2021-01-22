@@ -416,7 +416,6 @@ def build_fed_avg_process(
 
   aggregation_state = aggregation_process.initialize.type_signature.result.member
 
-  ids_type = tff.SequenceType(tff.TensorType(dtype = tf.float32, shape=[1,1]))
 
   server_state_type = ServerState(
         model=model_weights_type,
@@ -424,7 +423,6 @@ def build_fed_avg_process(
         round_num=round_num_type,
         effective_num_clients= tf.int32,
         delta_aggregate_state=aggregation_state,
-        ids = ids_type
         )
 
   # @computations.tf_computation(clients_weights_type)
