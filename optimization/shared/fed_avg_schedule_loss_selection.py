@@ -440,6 +440,8 @@ def build_fed_avg_process(
   def get_ids():
     return [tf.constant([[i]], dtype=tf.int32) for i in range(total_clients)]
 
+  ROUND_IDS = get_ids()
+
   single_id_type = tff.TensorType(dtype = tf.int32, shape = [1,1])
   @tff.tf_computation(model_input_type, model_weights_type, round_num_type, single_id_type)
   def client_update_fn(tf_dataset, initial_model_weights, round_num, client_id):
@@ -477,11 +479,12 @@ def build_fed_avg_process(
   # @tff.tf_computation(client_losses_type)
   # def dataset_to_tensor_fn(dataset):
   #   return dataset_to_tensor(dataset)
-
+  ids_type = tff.SequenceType(tff.TensorType(shape=[1,1], dtype = tf.int32))
   @tff.federated_computation(
       tff.FederatedType(server_state_type, tff.SERVER),
-      tff.FederatedType(tf_dataset_type, tff.CLIENTS))
-  def run_one_round(server_state, federated_dataset):
+      tff.FederatedType(tf_dataset_type, tff.CLIENTS),
+      tff.FederatedType(ids_type, tff.CLIENTS))
+  def run_one_round(server_state, federated_dataset, ids=ROUND_IDS):
     """Orchestration logic for one round of computation.
 
     Args:
@@ -494,7 +497,6 @@ def build_fed_avg_process(
     """
     client_model = tff.federated_broadcast(server_state.model)
     client_round_num = tff.federated_broadcast(server_state.round_num)
-    ids = get_ids()
 
     client_outputs = tff.federated_map(
         client_update_fn,
