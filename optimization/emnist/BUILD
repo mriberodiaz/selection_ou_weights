@@ -39,11 +39,11 @@ py_library(
     ],
 )
 py_library(
-    name = "federated_emnist_compression",
-    srcs = ["federated_emnist_compression.py"],
+    name = "federated_emnist_loss",
+    srcs = ["federated_emnist_loss.py"],
     srcs_version = "PY3",
     deps = [
-        "//utils:training_loop",
+        "//utils:training_loop_loss",
         "//utils:training_utils",
         "//utils/datasets:emnist_dataset",
         "//utils/models:emnist_models",
