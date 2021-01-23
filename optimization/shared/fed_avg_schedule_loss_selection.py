@@ -440,8 +440,8 @@ def build_fed_avg_process(
   def get_ids():
     return [tf.constant([[i]], dtype=tf.int32) for i in range(total_clients)]
 
-
-  @tff.tf_computation(model_input_type, model_weights_type, round_num_type, tf.int32)
+  single_id_type = tff.TensorType(dtype = tf.int32, shape = [1,1])
+  @tff.tf_computation(model_input_type, model_weights_type, round_num_type, single_id_type)
   def client_update_fn(tf_dataset, initial_model_weights, round_num, client_id):
     client_lr = client_lr_schedule(round_num)
     client_optimizer = client_optimizer_fn(client_lr)
@@ -494,7 +494,7 @@ def build_fed_avg_process(
     """
     client_model = tff.federated_broadcast(server_state.model)
     client_round_num = tff.federated_broadcast(server_state.round_num)
-    ids = intrinsics.federated_eval(get_ids, placements.CLIENTS)
+    ids = get_ids()
 
     client_outputs = tff.federated_map(
         client_update_fn,
