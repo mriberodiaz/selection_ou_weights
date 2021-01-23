@@ -436,11 +436,6 @@ def build_fed_avg_process(
   # federated_output_computation = computations.federated_computation(
   #       federated_output, federated_local_outputs_type)
 
-  @computations.tf_computation()
-  def get_ids():
-    return [tf.constant([[i]], dtype=tf.int32) for i in range(total_clients)]
-
-  ROUND_IDS = get_ids()
 
   single_id_type = tff.TensorType(dtype = tf.int32, shape = [1,1])
   @tff.tf_computation(model_input_type, model_weights_type, round_num_type, single_id_type)
@@ -484,7 +479,7 @@ def build_fed_avg_process(
       tff.FederatedType(server_state_type, tff.SERVER),
       tff.FederatedType(tf_dataset_type, tff.CLIENTS),
       tff.FederatedType(ids_type, tff.CLIENTS))
-  def run_one_round(server_state, federated_dataset, ids=ROUND_IDS):
+  def run_one_round(server_state, federated_dataset, ids):
     """Orchestration logic for one round of computation.
 
     Args:
