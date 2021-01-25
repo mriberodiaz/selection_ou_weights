@@ -503,8 +503,11 @@ def build_fed_avg_process(
     #LOSS SELECTION:
     # losses_at_server = tff.federated_collect(client_outputs.model_output)
     # weights_at_server = tff.federated_collect(client_weight)
+    @computations.tf_computation
+    def zeros_fn():
+      return tf.zeros(shape=[total_clients,1] , dtype=tf.float32)
 
-    zero = tf.zeros(shape=[total_clients,1] , dtype=tf.float32)
+    zero = zeros_fn()
     at_server_type = tff.TensorType(shape=[total_clients,1],dtype=tf.float32)
     # list_type = tff.SequenceType( tff.TensorType(dtype=tf.float32))
     client_output_type = client_update_fn.type_signature.result
