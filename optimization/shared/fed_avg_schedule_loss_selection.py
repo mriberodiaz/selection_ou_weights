@@ -474,11 +474,11 @@ def build_fed_avg_process(
   # @tff.tf_computation(client_losses_type)
   # def dataset_to_tensor_fn(dataset):
   #   return dataset_to_tensor(dataset)
-  ids_type = tff.SequenceType(tff.TensorType(shape=[1,1], dtype = tf.int32))
+  id_type = tff.TensorType(shape=[1,1], dtype = tf.int32)
   @tff.federated_computation(
       tff.FederatedType(server_state_type, tff.SERVER),
       tff.FederatedType(tf_dataset_type, tff.CLIENTS),
-      tff.FederatedType(ids_type, tff.CLIENTS))
+      tff.FederatedType(id_type, tff.CLIENTS))
   def run_one_round(server_state, federated_dataset, ids):
     """Orchestration logic for one round of computation.
 
