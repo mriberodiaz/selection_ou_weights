@@ -507,7 +507,7 @@ def build_fed_avg_process(
     zero = tf.zeros(shape=[total_clients,1] , dtype=tf.float32)
     at_server_type = tff.TensorType(shape=[total_clients,1],dtype=tf.float32)
     # list_type = tff.SequenceType( tff.TensorType(dtype=tf.float32))
-    client_output_type = client_update_fn.type_signature.result.member
+    client_output_type = client_update_fn.type_signature.result
     @computations.tf_computation(at_server_type, client_output_type)
     def accumulate_weight(u,t):
       value = t.client_weight
