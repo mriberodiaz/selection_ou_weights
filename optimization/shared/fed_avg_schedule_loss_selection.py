@@ -517,7 +517,7 @@ def build_fed_avg_process(
 
     @computations.tf_computation(at_server_type, client_output_type)
     def accumulate_loss(u,t):
-      value = t.model_output.loss['loss']
+      value = t.model_output['loss']
       index = t.client_id
       new_u = tf.tensor_scatter_nd_update(u,index,value)  
       return new_u
