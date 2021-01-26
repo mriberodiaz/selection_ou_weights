@@ -552,7 +552,7 @@ def build_fed_avg_process(
 
     aggregation_output = aggregation_process.next(
         server_state.delta_aggregate_state, client_outputs.weights_delta,
-        selected_clients_weights)
+        selected_clients_weights_at_client)
 
     # model_delta = tff.federated_mean(
     #     client_outputs.weights_delta, weight=client_weight)
