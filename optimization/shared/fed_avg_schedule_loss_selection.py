@@ -411,8 +411,8 @@ def build_fed_avg_process(
   tf_dataset_type = tff.SequenceType(dummy_model.input_spec)
   model_input_type = tff.SequenceType(dummy_model.input_spec)
 
-  client_losses_at_server_type = tff.TensorType(dtype=tf.float32, shape=[total_clients,])
-  clients_weights_at_server_type = tff.TensorType(dtype=tf.float32, shape=[total_clients,])
+  client_losses_at_server_type = tff.TensorType(dtype=tf.float32, shape=[total_clients,1])
+  clients_weights_at_server_type = tff.TensorType(dtype=tf.float32, shape=[total_clients,1])
 
   aggregation_state = aggregation_process.initialize.type_signature.result.member
 
