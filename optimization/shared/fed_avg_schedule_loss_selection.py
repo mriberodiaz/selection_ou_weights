@@ -338,7 +338,7 @@ def redefine_client_weight( losses,weights, effective_num_clients):
 
 @tf.function
 def select_weight(weights, my_id):
-  return tf.reshape(tf.gather(weights,my_id),shape=[-1])
+  return tf.reshape(tf.gather(weights,my_id),shape=[])
 
 def build_fed_avg_process(
     total_clients: int,
