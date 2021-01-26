@@ -336,6 +336,9 @@ def redefine_client_weight( losses,weights, effective_num_clients):
   final_weights = tf.tensor_scatter_nd_update(new_weights, expanded_indices, keep_weights)  
   return final_weights
 
+@tf.function
+def select_weight(weights, my_id):
+  return tf.reshape(tf.gather(weights,my_id),shape=[-1])
 
 def build_fed_avg_process(
     total_clients: int,
@@ -456,6 +459,12 @@ def build_fed_avg_process(
     _initialize_optimizer_vars(model, server_optimizer)
     return server_update(model, server_optimizer, server_state, model_delta)
 
+  id_type = tff.TensorType(shape=[1,1], dtype = tf.int32)
+
+  @tff.tf_computation(clients_weights_at_server_type, id_type)
+  def select_weight_fn(clients_weights, local_id):
+    return select_weight(clients_weights, local_id)
+
 
   @tff.tf_computation(client_losses_at_server_type, clients_weights_at_server_type,tf.int32)
   def zero_small_loss_clients(losses_at_server, weights_at_server, effective_num_clients):
@@ -474,7 +483,6 @@ def build_fed_avg_process(
   # @tff.tf_computation(client_losses_type)
   # def dataset_to_tensor_fn(dataset):
   #   return dataset_to_tensor(dataset)
-  id_type = tff.TensorType(shape=[1,1], dtype = tf.int32)
   @tff.federated_computation(
       tff.FederatedType(server_state_type, tff.SERVER),
       tff.FederatedType(tf_dataset_type, tff.CLIENTS),
@@ -537,6 +545,10 @@ def build_fed_avg_process(
       (losses_at_server, weights_at_server, server_state.effective_num_clients))
 
     # selected_clients_weights_at_client = tff.federated_broadcast(selected_clients_weights)
+
+    selected_clients_weights_broadcast = tff.federated_broadcast(selected_clients_weights)
+
+    selected_clients_weights_at_client = tff.federated_map(select_weight_fn, selected_clients_weights_broadcast, ids)
 
     aggregation_output = aggregation_process.next(
         server_state.delta_aggregate_state, client_outputs.weights_delta,
