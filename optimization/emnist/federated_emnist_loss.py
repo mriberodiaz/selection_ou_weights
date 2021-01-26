@@ -146,6 +146,7 @@ def run_federated(
       validation_fn=evaluate_fn,
       test_fn=evaluate_fn,
       total_rounds=total_rounds,
+      total_clients = clients_per_round,
       experiment_name=experiment_name,
       root_output_dir=root_output_dir,
       **kwargs)
