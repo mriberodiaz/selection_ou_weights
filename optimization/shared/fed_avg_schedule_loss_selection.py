@@ -548,7 +548,7 @@ def build_fed_avg_process(
 
     selected_clients_weights_broadcast = tff.federated_broadcast(selected_clients_weights)
 
-    selected_clients_weights_at_client = tff.federated_map(select_weight_fn, selected_clients_weights_broadcast, ids)
+    selected_clients_weights_at_client = tff.federated_map(select_weight_fn, (selected_clients_weights_broadcast, ids))
 
     aggregation_output = aggregation_process.next(
         server_state.delta_aggregate_state, client_outputs.weights_delta,
