@@ -256,7 +256,7 @@ def run(iterative_process: tff.templates.IterativeProcess,
     try:
       with profiler(round_num):
         state, round_metrics = iterative_process.next(state,
-                                                      federated_train_data, ids)
+                                                      federated_train_data, ROUND_IDS)
     except (tf.errors.FailedPreconditionError, tf.errors.NotFoundError,
             tf.errors.InternalError) as e:
       logging.warning('Caught %s exception while running round %d:\n\t%s',
