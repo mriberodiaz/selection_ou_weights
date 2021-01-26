@@ -508,6 +508,7 @@ def build_fed_avg_process(
       return tf.zeros(shape=[total_clients,1] , dtype=tf.float32)
 
     zero = zeros_fn()
+
     at_server_type = tff.TensorType(shape=[total_clients,1],dtype=tf.float32)
     # list_type = tff.SequenceType( tff.TensorType(dtype=tf.float32))
     client_output_type = client_update_fn.type_signature.result
@@ -528,7 +529,7 @@ def build_fed_avg_process(
     output_at_server= tff.federated_collect(client_outputs)
     
     weights_at_server = tff.sequence_reduce(output_at_server, zero, accumulate_weight)
-    losses_at_server_unfold = tff.sequence_reduce(output_at_server, zero, accumulate_loss)
+    losses_at_server = tff.sequence_reduce(output_at_server, zero, accumulate_loss)
     #losses_at_server = tff.federated_aggregate(client_outputs.model_output, zero, accumulate, merge, report)
 
     selected_clients_weights = tff.federated_map(
