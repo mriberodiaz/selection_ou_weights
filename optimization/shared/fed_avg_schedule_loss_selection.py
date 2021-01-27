@@ -534,10 +534,10 @@ def build_fed_avg_process(
       new_u = tf.tensor_scatter_nd_update(u,index,value)  
       return new_u
 
-    output_at_server= tff.federated_collect(client_outputs)
+    # output_at_server= tff.federated_collect(client_outputs)
     
-    weights_at_server = tff.sequence_reduce(output_at_server, zero, accumulate_weight)
-    losses_at_server = tff.sequence_reduce(output_at_server, zero, accumulate_loss)
+    weights_at_server = tff.federated_reduce(client_outputs, zero, accumulate_weight)
+    losses_at_server = tff.sequence_reduce(client_outputs, zero, accumulate_loss)
     #losses_at_server = tff.federated_aggregate(client_outputs.model_output, zero, accumulate, merge, report)
 
     selected_clients_weights = tff.federated_map(
