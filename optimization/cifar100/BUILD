@@ -37,4 +37,14 @@ py_library(
         "//utils/models:resnet_models",
     ],
 )
-
+py_library(
+    name = "federated_cifar100_loss",
+    srcs = ["federated_cifar100_loss.py"],
+    srcs_version = "PY3",
+    deps = [
+        "//utils:training_loop_loss",
+        "//utils:training_utils",
+        "//utils/datasets:cifar100_dataset",
+        "//utils/models:resnet_models",
+    ],
+)
