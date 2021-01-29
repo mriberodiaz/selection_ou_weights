@@ -35,12 +35,14 @@ from optimization.synthetic import federated_synthetic
 from optimization.synthetic import federated_synthetic_random
 from optimization.cifar100 import federated_cifar100
 from optimization.cifar100 import federated_cifar100_random
+from optimization.cifar100 import federated_cifar100_loss
 from optimization.emnist import federated_emnist
 from optimization.emnist import federated_emnist_random
 from optimization.emnist import federated_emnist_loss
 from optimization.emnist_ae import federated_emnist_ae
 from optimization.shakespeare import federated_shakespeare
 from optimization.shakespeare import federated_shakespeare_random
+from optimization.shakespeare import federated_shakespeare_loss
 from optimization.shared import fed_avg_schedule_ou as fed_ou
 from optimization.shared import fed_avg_schedule_ou_compression as fed_ou_comp
 from optimization.shared import fed_avg_schedule as fed_avg
@@ -403,6 +405,8 @@ def main(argv):
   if FLAGS.task == 'cifar100':
     if FLAGS.random:
       run_federated_fn = federated_cifar100_random.run_federated
+    elif FLAGS.loss:
+      run_federated = federated_cifar100_loss.run_federated
     else:
       run_federated_fn = federated_cifar100.run_federated
 
@@ -418,6 +422,8 @@ def main(argv):
   elif FLAGS.task == 'shakespeare':
     if FLAGS.random:
       run_federated_fn = federated_shakespeare_random.run_federated
+    elif FLAGS.loss:
+      run_federated_fn = federated_shakespeare_loss.run_federated
     else:
       run_federated_fn = federated_shakespeare.run_federated
   elif FLAGS.task == 'stackoverflow_nwp':
