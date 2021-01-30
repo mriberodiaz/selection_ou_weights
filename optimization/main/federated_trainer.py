@@ -406,7 +406,7 @@ def main(argv):
     if FLAGS.random:
       run_federated_fn = federated_cifar100_random.run_federated
     elif FLAGS.loss:
-      run_federated = federated_cifar100_loss.run_federated
+      run_federated_fn = federated_cifar100_loss.run_federated
     else:
       run_federated_fn = federated_cifar100.run_federated
 
