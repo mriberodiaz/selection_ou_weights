@@ -10,6 +10,11 @@ py_library(
     srcs_version = "PY3",
 )
 py_library(
+    name = "fed_avg_schedule_comp",
+    srcs = ["fed_avg_schedule_comp.py"],
+    srcs_version = "PY3",
+)
+py_library(
     name = "fed_avg_schedule_ou",
     srcs = ["fed_avg_schedule_ou.py"],
     srcs_version = "PY3",
