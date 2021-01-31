@@ -96,7 +96,7 @@ def server_update(model, server_optimizer, server_state, weights_delta):
   Returns:
     An updated `ServerState`.
   """
-  model_weights = _get_weights(model)
+  model_weights = model.weights
   tff.utils.assign(model_weights, server_state.model)
   # Server optimizer variables must be initialized prior to invoking this
   tff.utils.assign(server_optimizer.variables(), server_state.optimizer_state)
