@@ -372,9 +372,9 @@ def build_fed_avg_process(
 
     return server_state, aggregated_outputs
 
-  @tff.federated_computation
-  def initialize_fn():
-    return tff.federated_value(server_init_tf(), tff.SERVER)
+  # @tff.federated_computation
+  # def initialize_fn():
+  #   return tff.federated_value(server_init_tf(), tff.SERVER)
 
   return tff.templates.IterativeProcess(
-      initialize_fn=initialize_fn, next_fn=run_one_round)
+      initialize_fn=initialize_computation, next_fn=run_one_round)
