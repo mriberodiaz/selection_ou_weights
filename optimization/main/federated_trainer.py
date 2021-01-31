@@ -46,6 +46,7 @@ from optimization.shakespeare import federated_shakespeare_loss
 from optimization.shared import fed_avg_schedule_ou as fed_ou
 from optimization.shared import fed_avg_schedule_ou_compression as fed_ou_comp
 from optimization.shared import fed_avg_schedule as fed_avg
+from optimization.shared import fed_avg_schedule_compression as fed_avg_comp
 from optimization.shared import fed_avg_schedule_zero as fed_zero
 from optimization.shared import fed_avg_schedule_ignore as fed_ignore
 from optimization.shared import fed_avg_schedule_zero_random as fed_zero_random
@@ -262,7 +263,10 @@ def main(argv):
     elif FLAGS.estimation== 'ignore':
       fed_avg_schedule = fed_ignore
     else:
-      fed_avg_schedule = fed_avg
+      if FLAGS.compression:
+        fed_avg_schedule = fed_avg_comp
+      else: 
+        fed_avg_schedule = fed_avg
 
   if FLAGS.loss and FLAGS.compression:
     def iterative_process_builder(
