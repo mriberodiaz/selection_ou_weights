@@ -108,9 +108,9 @@ def server_update(model, server_optimizer, server_state, weights_delta):
 
   # Apply the update to the model. We must multiply weights_delta by -1.0 to
   # view it as a gradient that should be applied to the server_optimizer.
-  grads_and_vars = [
+  grads_and_vars = (
       (-1.0 * x, v) for x, v in zip(weights_delta, model_weights.trainable)
-  ]
+  )
 
   server_optimizer.apply_gradients(grads_and_vars)
 
