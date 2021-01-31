@@ -294,7 +294,7 @@ def build_fed_avg_process(
         server_optimizer_fn = lambda: server_optimizer_fn(server_lr_schedule(0)), 
         aggregation_process = aggregation_process)
 
-  server_state_type = server_init_tf.type_signature.result
+  server_state_type = initialize_computation.type_signature.result
   model_weights_type = server_state_type.model
   round_num_type = server_state_type.round_num
 
