@@ -286,7 +286,14 @@ def build_fed_avg_process(
   if not callable(server_lr_schedule):
     server_lr_schedule = lambda round_num: server_lr
 
-  dummy_model = model_fn()
+  with tf.Graph().as_default():
+    dummy_model = model_fn()
+    model_weights_type = model_utils.weights_type_from_model(
+        dummy_model)
+    dummy_optimizer = server_optimizer_fn()
+    _initialize_optimizer_vars(dummy_model, dummy_optimizer)
+    optimizer_variable_type = type_conversions.type_from_tensors(
+        dummy_optimizer.variables())    
 
   initialize_computation = build_server_init_fn(
         model_fn = model_fn,
@@ -294,9 +301,16 @@ def build_fed_avg_process(
         server_optimizer_fn = lambda: server_optimizer_fn(server_lr_schedule(0)), 
         aggregation_process = aggregation_process)
 
-  server_state_type = initialize_computation.type_signature.result
-  model_weights_type = server_state_type.model
-  round_num_type = server_state_type.round_num
+  
+  round_num_type = tf.float32
+  aggregation_state = aggregation_process.initialize.type_signature.result.member
+
+  server_state_type = ServerState(
+      model=model_weights_type,
+      optimizer_state=optimizer_variable_type,
+      round_num=round_num_type,
+      delta_aggregate_state=aggregation_state,
+      )
 
   tf_dataset_type = tff.SequenceType(dummy_model.input_spec)
   model_input_type = tff.SequenceType(dummy_model.input_spec)
