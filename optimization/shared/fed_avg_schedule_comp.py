@@ -66,7 +66,7 @@ def _get_weights(model: tff.learning.Model) -> tff.learning.ModelWeights:
   return tff.learning.ModelWeights.from_model(model)
 
 
-@attr.s(eq=False, order=False, frozen=True)
+@attr.s(eq=False, frozen=True)
 class ServerState(object):
   """Structure for state on the server.
 
@@ -101,10 +101,10 @@ def server_update(model, server_optimizer, server_state, weights_delta):
   # Server optimizer variables must be initialized prior to invoking this
   tff.utils.assign(server_optimizer.variables(), server_state.optimizer_state)
 
-  weights_delta, has_non_finite_weight = (
-      tensor_utils.zero_all_if_any_non_finite(weights_delta))
-  if has_non_finite_weight > 0:
-    return server_state
+  # weights_delta, has_non_finite_weight = (
+  #     tensor_utils.zero_all_if_any_non_finite(weights_delta))
+  # if has_non_finite_weight > 0:
+  #   return server_state
 
   # Apply the update to the model. We must multiply weights_delta by -1.0 to
   # view it as a gradient that should be applied to the server_optimizer.
@@ -112,7 +112,7 @@ def server_update(model, server_optimizer, server_state, weights_delta):
       (-1.0 * x, v) for x, v in zip(weights_delta, model_weights.trainable)
   )
 
-  server_optimizer.apply_gradients(grads_and_vars)
+  server_optimizer.apply_gradients(grads_and_vars, name='server_update')
 
   # Create a new state based on the updated model.
   return tff.utils.update_state(
