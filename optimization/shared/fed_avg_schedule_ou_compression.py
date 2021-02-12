@@ -190,7 +190,7 @@ def server_update(model, server_optimizer, server_state, weights_delta,num_parti
       num_participants = num_participants,
       global_norm_mean = global_norm_mean,
       global_norm_std = global_norm_std,
-      threshold = global_norm_mean - 2*global_norm_std, 
+      threshold = global_norm_mean - global_norm_std, 
       )
 
 
